@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-const officialUrl = 'https://zwhy149.github.io/bead-grid-studio/';
+const officialUrl = 'https://ryanliying.github.io/starpicdots/';
 
 async function waitForPattern(page) {
   await expect(page.locator('#convertOverlay')).not.toHaveClass(/is-visible/, { timeout: 20_000 });
@@ -58,7 +58,7 @@ test('English onboarding generates the bundled sample without network image uplo
     url: `${officialUrl}?lang=en-US`,
   });
   const payload = await page.evaluate(() => window.__sharedPayload);
-  expect(payload.title).toMatch(/Bead Grid Studio/);
+  expect(payload.title).toMatch(/StarPicDots/);
   expect(payload.text).toMatch(/fuse-bead pattern/i);
 });
 
@@ -68,7 +68,7 @@ test('English key interface contains no accidental Chinese UI', async ({ page })
     '.topbar', '#controlPanel', '#emptyState', '#palettePanel', '#productDialog', '#cropDialog', '#shareDialog', '.mobile-dock',
   ];
   const text = await page.locator(selectors.join(',')).allTextContents();
-  const visibleCopy = text.join(' ').replace(/豆格工坊|中文|MARD/g, '');
+  const visibleCopy = text.join(' ').replace(/海星图豆|中文|MARD/g, '');
   expect(visibleCopy).not.toMatch(/[\u4e00-\u9fff]/);
   const exposedLabels = await page.locator('[aria-label],[title]').evaluateAll((nodes) => nodes.flatMap((node) => [
     node.getAttribute('aria-label'),

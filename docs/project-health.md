@@ -2,11 +2,13 @@
 
 [简体中文](project-health.zh-CN.md) · **English**
 
-This page gives maintainers, contributors, reviewers, and open-source support programs a factual snapshot of Bead Grid Studio. It deliberately separates verifiable repository signals from unknown product analytics.
+This page gives maintainers, contributors, reviewers, and open-source support programs a factual snapshot of StarPicDots. It deliberately separates verifiable repository signals from unknown product analytics.
+
+StarPicDots is based on the open-source project [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio), licensed under Apache-2.0. The dated snapshot and community-maintenance evidence below were collected for that upstream project and are retained here for attribution; they describe Bead Grid Studio's history, not StarPicDots release metrics.
 
 ## What the project delivers
 
-Bead Grid Studio is a local-first fuse-bead pattern generator. It converts a local image into an editable grid, preserves the source aspect ratio, maps cells to a pinned 221-code base palette, and exports making-ready sheets with coordinates, guides, board seams, per-cell codes, and material counts. The web app, PWA, and portable single HTML share the same implementation.
+StarPicDots is a local-first fuse-bead pattern generator. It converts a local image into an editable grid, preserves the source aspect ratio, maps cells to a pinned 221-code base palette, and exports making-ready sheets with coordinates, guides, board seams, per-cell codes, and material counts. The web app, PWA, and portable single HTML share the same implementation.
 
 The project does not operate an image-upload backend or analytics SDK. This keeps source images on the user's device and makes hosting inexpensive, but it also means the repository cannot honestly report unique users or conversion volume.
 

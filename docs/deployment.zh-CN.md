@@ -1,8 +1,10 @@
-# Fork 并部署自己的 Bead Grid Studio
+# Fork 并部署自己的 StarPicDots
 
 **简体中文** · [English](deployment.md)
 
-豆格工坊是纯静态浏览器应用。图片解码与转换发生在访问者自己的设备上；部署目录不包含账号、支付、卡密、图片上传或云端转换接口。
+本项目基于开源项目 [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio)（Apache-2.0）二次开发。
+
+海星图豆是纯静态浏览器应用。图片解码与转换发生在访问者自己的设备上；部署目录不包含账号、支付、卡密、图片上传或云端转换接口。
 
 ## 4 步得到自己的网页
 
@@ -20,8 +22,8 @@ Settings → Pages → GitHub Actions
 
 ## 先判断你是否真的需要部署
 
-- 只是制作拼豆图：直接使用[在线版](https://zwhy149.github.io/bead-grid-studio/)。
-- 想断网使用：从 [Release](https://github.com/zwhy149/bead-grid-studio/releases/latest) 下载单 HTML。
+- 只是制作拼豆图：直接使用[在线版](https://ryanliying.github.io/starpicdots/)。
+- 想断网使用：从 [Release](https://github.com/RyanLiying/starpicdots/releases/latest) 下载单 HTML。
 - 想拥有自己的网址、名称、更新节奏或安全响应头：再部署 Fork。
 - 支付、卡密、授权和订单不能写进这个静态前端，必须使用单独审核的服务端。
 
@@ -35,7 +37,7 @@ Settings → Pages → GitHub Actions
 4. 打开仓库的 **Actions** 页面。新 Fork 可能会提示先启用工作流，按提示确认。
 5. 选择 **Deploy GitHub Pages**，点击运行；也可以向 `main` 推送一次提交触发部署。
 6. 等待 build 和 deploy 两个任务都变成绿色。
-7. 访问 `https://你的用户名.github.io/bead-grid-studio/`。
+7. 访问 `https://你的用户名.github.io/starpicdots/`。
 
 不要手工提交 `dist` 文件夹，工作流会从源码重新构建。GitHub 官方对权限和发布步骤的说明见 [Using custom workflows with GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
 
@@ -73,8 +75,8 @@ Cloudflare Pages 等支持 `_headers` 约定的平台可以应用仓库附带的
 不想连接 GitHub 账号时，可以先在电脑上构建：
 
 ```bash
-git clone https://github.com/zwhy149/bead-grid-studio.git
-cd bead-grid-studio
+git clone https://github.com/RyanLiying/starpicdots.git
+cd starpicdots
 npm ci
 npm run build
 ```
@@ -91,7 +93,7 @@ npm run build
 也可以使用 Wrangler：
 
 ```bash
-npx wrangler pages deploy dist --project-name=bead-grid-studio-demo
+npx wrangler pages deploy dist --project-name=starpicdots-demo
 ```
 
 项目名只使用小写字母、数字和连字符，并换成你自己的名称。

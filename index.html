@@ -4,45 +4,43 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#fbfaf7">
-  <meta name="description" content="上传图片，一键生成带逐格色号、粗辅助线与用量统计的拼豆施工图。图片仅在你的浏览器本地处理，不上传服务器。">
+  <meta name="theme-color" content="#3881C3">
+  <meta name="description" content="上传图片，一键生成带逐格色号、辅助线与用量统计的拼豆施工图；支持豆仓库限色与缺色清单，图片全程在本地浏览器处理，不上传服务器。">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <link rel="canonical" href="https://zwhy149.github.io/bead-grid-studio/">
-  <link rel="alternate" hreflang="zh-CN" href="https://zwhy149.github.io/bead-grid-studio/?lang=zh-CN">
-  <link rel="alternate" hreflang="en" href="https://zwhy149.github.io/bead-grid-studio/?lang=en-US">
-  <link rel="alternate" hreflang="x-default" href="https://zwhy149.github.io/bead-grid-studio/">
+  <link rel="canonical" href="https://ryanliying.github.io/starpicdots/">
+  <link rel="alternate" hreflang="zh-CN" href="https://ryanliying.github.io/starpicdots/?lang=zh-CN">
+  <link rel="alternate" hreflang="en" href="https://ryanliying.github.io/starpicdots/?lang=en-US">
+  <link rel="alternate" hreflang="x-default" href="https://ryanliying.github.io/starpicdots/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="zh_CN">
-  <meta property="og:title" content="豆格工坊 · 在线拼豆图纸生成器">
-  <meta property="og:description" content="图片本地处理，自动配色、统计豆子并导出可打印的拼豆施工图。">
-  <meta property="og:url" content="https://zwhy149.github.io/bead-grid-studio/">
-  <meta property="og:image" content="https://zwhy149.github.io/bead-grid-studio/social-preview.png">
-  <meta property="og:image:alt" content="Bead Grid Studio original image to fuse bead pattern preview">
+  <meta property="og:title" content="海星图豆 · 在线拼豆图纸施工图">
+  <meta property="og:description" content="图片本地处理，自动配色、豆仓库限色、统计用量，并导出可打印的拼豆施工图。">
+  <meta property="og:url" content="https://ryanliying.github.io/starpicdots/">
+  <meta property="og:image" content="https://ryanliying.github.io/starpicdots/social-preview.png">
+  <meta property="og:image:alt" content="海星图豆 StarPicDots 拼豆图纸生成器预览图">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="675">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="在线拼豆图纸生成器｜图片转拼豆 · 豆格工坊">
-  <meta name="twitter:description" content="上传图片，一键生成带逐格色号、辅助线与用料统计的拼豆施工图；图片仅在浏览器本地处理。">
-  <meta name="twitter:image" content="https://zwhy149.github.io/bead-grid-studio/social-preview.png">
+  <meta name="twitter:title" content="在线拼豆图纸施工图｜图片转拼豆 · 海星图豆">
+  <meta name="twitter:description" content="图片本地处理，自动配色、豆仓库限色、统计用量，并导出可打印的拼豆施工图。">
+  <meta name="twitter:image" content="https://ryanliying.github.io/starpicdots/social-preview.png">
   <link rel="icon" href="./app-icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./app-icon-192.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <title>在线拼豆图纸生成器｜图片转拼豆 · 豆格工坊</title>
+  <title>在线拼豆图纸施工图｜图片转拼豆 · 海星图豆</title>
   <link rel="stylesheet" href="./src/styles.css">
-  <script type="application/ld+json" id="softwareJsonLd">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Bead Grid Studio / 豆格工坊","applicationCategory":"DesignApplication","operatingSystem":"Any modern web browser","url":"https://zwhy149.github.io/bead-grid-studio/","isAccessibleForFree":true,"license":"https://www.apache.org/licenses/LICENSE-2.0"}</script>
+  <script type="application/ld+json" id="softwareJsonLd">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"StarPicDots / 海星图豆","applicationCategory":"DesignApplication","operatingSystem":"Any modern web browser","url":"https://ryanliying.github.io/starpicdots/","isAccessibleForFree":true,"license":"https://www.apache.org/licenses/LICENSE-2.0"}</script>
 </head>
 <body>
-  <h1 class="visually-hidden" data-i18n="app.heading">豆格工坊：在线拼豆图纸生成器</h1>
+  <h1 class="visually-hidden" data-i18n="app.heading">海星图豆：在线拼豆图纸施工图</h1>
   <a class="skip-link" href="#canvasViewport" data-i18n="app.skipCanvas">跳到图纸画布</a>
 
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand" aria-label="豆格工坊" data-i18n-aria="brand.aria">
-        <span class="brand-mark" aria-hidden="true">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-        </span>
-        <span class="brand-copy"><strong data-i18n="brand.name">豆格工坊</strong><span data-i18n="brand.tagline">在线拼豆图纸生成器</span></span>
+      <div class="brand" aria-label="海星图豆" data-i18n-aria="brand.aria">
+        <img class="brand-mark" src="./app-icon.svg" alt="" aria-hidden="true">
+        <span class="brand-copy"><strong data-i18n="brand.name">海星图豆</strong><span data-i18n="brand.tagline">在线拼豆图纸施工图</span></span>
       </div>
 
       <div class="project-meta">
@@ -316,7 +314,7 @@
               <div class="hero-actions">
                 <button class="button primary" id="trySampleBtn" type="button" data-i18n="action.trySample">试试示例</button>
                 <button class="button secondary" id="emptyUploadBtn" type="button" data-i18n="action.chooseImage">选择图片</button>
-                <a class="button secondary" id="downloadOfflineLink" href="https://github.com/zwhy149/bead-grid-studio/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="action.downloadOffline">下载离线版</a>
+                <a class="button secondary" id="downloadOfflineLink" href="https://github.com/RyanLiying/starpicdots/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="action.downloadOffline">下载离线版</a>
               </div>
               <div class="recovery-actions" id="recoveryActions" hidden>
                 <button class="button secondary compact" id="restoreDraftBtn" type="button" data-i18n="draft.restore">恢复上次未完成图纸</button>
@@ -346,9 +344,9 @@
             <button class="button secondary" id="readyShareCardBtn" type="button" data-i18n="action.exportShareCard">导出宣传图</button>
           </div>
           <nav class="ready-community-links" aria-label="开源社区操作" data-i18n-aria="aria.communityActions">
-            <a href="https://github.com/zwhy149/bead-grid-studio" target="_blank" rel="noopener noreferrer" data-i18n="action.star">GitHub Star</a>
-            <a href="https://github.com/zwhy149/bead-grid-studio/issues/new/choose" target="_blank" rel="noopener noreferrer" data-i18n="action.reportIssue">反馈问题</a>
-            <a href="https://github.com/zwhy149/bead-grid-studio/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" data-i18n="action.contribute">参与贡献</a>
+            <a href="https://github.com/RyanLiying/starpicdots" target="_blank" rel="noopener noreferrer" data-i18n="action.star">GitHub Star</a>
+            <a href="https://github.com/RyanLiying/starpicdots/issues/new/choose" target="_blank" rel="noopener noreferrer" data-i18n="action.reportIssue">反馈问题</a>
+            <a href="https://github.com/RyanLiying/starpicdots/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" data-i18n="action.contribute">参与贡献</a>
           </nav>
         </section>
 
@@ -384,6 +382,46 @@
 
       <aside class="side-panel panel-right" id="palettePanel" aria-label="色板和用料统计" data-i18n-aria="aria.paletteStats">
         <div class="mobile-sheet-head"><strong data-i18n="palette.panel">色板与用料</strong><button class="icon-button sheet-close" type="button" aria-label="关闭色板" data-i18n-aria="aria.closePalette">×</button></div>
+
+        <section class="panel-section" id="inventorySection">
+          <div class="section-head"><h2 data-i18n="inventory.title">豆仓库存</h2><small id="inventoryCountLabel">已选 0 / 220 色</small></div>
+          <div class="inventory-repo-bar">
+            <select id="inventorySelect" aria-label="选择豆仓库" data-i18n-aria="aria.inventorySelect"></select>
+            <div class="inventory-repo-actions" role="group" aria-label="仓库管理操作" data-i18n-aria="aria.inventoryRepoActions">
+              <button class="button secondary compact" id="inventoryNewBtn" type="button" data-i18n="inventory.newRepository">新建仓库</button>
+              <button class="button secondary compact" id="inventoryRenameBtn" type="button" data-i18n="inventory.renameRepository">重命名</button>
+              <button class="button secondary compact danger" id="inventoryDeleteBtn" type="button" data-i18n="inventory.deleteRepository">删除仓库</button>
+            </div>
+          </div>
+          <label class="check-row inventory-toggle" for="inventoryEnabled">
+            <input id="inventoryEnabled" type="checkbox">
+            <span><b data-i18n="inventory.toggle">只用我仓库里的豆子</b><small data-i18n="inventory.toggleNote">开启后，自动转换只从下方勾选的色号取色；色板仍可手动绘制任意颜色。</small></span>
+          </label>
+          <div class="palette-tools"><input id="inventorySearch" type="search" placeholder="搜索色号或名称" aria-label="搜索色板" data-i18n-placeholder="palette.search" data-i18n-aria="aria.searchPalette"></div>
+          <div class="palette-series" role="group" aria-label="按色系筛选" data-i18n-aria="aria.paletteSeries">
+            <button type="button" data-inventory-series="all" aria-pressed="true" data-i18n="palette.all">全部</button>
+            <button type="button" data-inventory-series="A">A</button><button type="button" data-inventory-series="B">B</button>
+            <button type="button" data-inventory-series="C">C</button><button type="button" data-inventory-series="D">D</button>
+            <button type="button" data-inventory-series="E">E</button><button type="button" data-inventory-series="F">F</button>
+            <button type="button" data-inventory-series="G">G</button><button type="button" data-inventory-series="H">H</button>
+            <button type="button" data-inventory-series="M">M</button>
+          </div>
+          <div class="palette-grid" id="inventoryGrid"></div>
+          <div class="inventory-actions" role="group" aria-label="库存批量操作" data-i18n-aria="aria.inventoryActions">
+            <button class="button secondary compact" id="inventorySelectAllBtn" type="button" data-i18n="inventory.selectAll">全选</button>
+            <button class="button secondary compact" id="inventoryClearBtn" type="button" data-i18n="inventory.clearAll">清空</button>
+            <button class="button secondary compact" id="inventoryImportBtn" type="button" data-i18n="inventory.import">导入</button>
+            <button class="button secondary compact" id="inventoryExportBtn" type="button" data-i18n="inventory.export">导出</button>
+          </div>
+          <input id="inventoryImportInput" type="file" accept="application/json,.json" hidden>
+          <div class="inventory-warning" id="inventoryWarning" role="status" hidden></div>
+          <p class="palette-note" data-i18n="inventory.note">勾选的色号会自动保存在本机，可导出 JSON 在多台设备间同步；透明豆 H1 不参与自动转换，无需勾选。</p>
+          <div class="missing-section" id="missingSection" hidden>
+            <div class="section-head"><h3 data-i18n="inventory.missingTitle">缺色清单</h3><small id="missingCountLabel"></small></div>
+            <div class="stats-list" id="missingList"></div>
+            <p class="palette-note" data-i18n="inventory.missingHint">按完整色板转换会用到、但库存中没有的颜色，按用量降序。</p>
+          </div>
+        </section>
 
         <section class="panel-section" id="paletteSection">
           <div class="section-head"><h2 data-i18n="palette.title">色板</h2><small id="paletteCountLabel" data-i18n="palette.countAll">221 色 · 9 系列</small></div>
@@ -422,8 +460,8 @@
       <span id="statusBeads">0</span>
       <span id="statusZoom">100%</span>
       <span class="status-message" id="statusMessage" data-i18n="status.ready">准备就绪 · 所有处理均在本机完成</span>
-      <span class="release-badge" id="appVersion">v1.2.0</span>
-      <nav class="release-links" aria-label="项目与许可" data-i18n-aria="aria.projectLicense"><a href="https://github.com/zwhy149/bead-grid-studio" target="_blank" rel="noopener noreferrer">GitHub</a><a href="./privacy.html" data-i18n="footer.privacy">隐私</a><a href="./terms.html" data-i18n="footer.terms">条款</a><a href="./LICENSE.txt" data-i18n="footer.license">开源许可</a><a href="./NOTICE.txt" data-i18n="footer.notices">第三方许可</a></nav>
+      <span class="release-badge" id="appVersion">v1.0.0</span>
+      <nav class="release-links" aria-label="项目与许可" data-i18n-aria="aria.projectLicense"><a href="https://github.com/RyanLiying/starpicdots" target="_blank" rel="noopener noreferrer">GitHub</a><a href="./privacy.html" data-i18n="footer.privacy">隐私</a><a href="./terms.html" data-i18n="footer.terms">条款</a><a href="./LICENSE.txt" data-i18n="footer.license">开源许可</a><a href="./NOTICE.txt" data-i18n="footer.notices">第三方许可</a></nav>
     </footer>
   </div>
 
@@ -431,6 +469,7 @@
   <nav class="mobile-dock" aria-label="移动端面板" data-i18n-aria="aria.mobilePanels">
     <button type="button" data-mobile-target="controlPanel" aria-pressed="false"><b aria-hidden="true">☰</b><span data-i18n="mobile.tools">工具</span></button>
     <button type="button" data-mobile-target="sizeSection" aria-pressed="false"><b aria-hidden="true">▦</b><span data-i18n="mobile.pattern">图纸</span></button>
+    <button type="button" data-mobile-target="inventorySection" aria-pressed="false"><b aria-hidden="true">◈</b><span data-i18n="mobile.inventory">豆仓</span></button>
     <button type="button" data-mobile-target="paletteSection" aria-pressed="false"><b aria-hidden="true">●</b><span data-i18n="mobile.palette">色板</span></button>
     <button type="button" data-mobile-target="statsSection" aria-pressed="false"><b aria-hidden="true">Σ</b><span data-i18n="mobile.stats">用量</span></button>
   </nav>
@@ -464,14 +503,14 @@
       <button class="icon-button" id="productCloseBtn" type="button" aria-label="关闭产品说明" data-i18n-aria="aria.closeProduct">×</button>
     </div>
     <div class="crop-body">
-      <p class="product-intro" data-i18n="product.intro">豆格工坊社区版是在浏览器本地处理的开源拼豆图纸工具，不提供站内账号、付款、卡密或云端图片转换。</p>
+      <p class="product-intro" data-i18n="product.intro">海星图豆是在浏览器本地处理的开源拼豆图纸工具，不提供站内账号、付款、卡密或云端图片转换。</p>
       <div class="product-grid">
         <section class="product-card"><h3 data-i18n="product.stepsTitle">三步完成</h3><ol><li data-i18n="product.step1">上传图片，优先裁剪单个主体。</li><li data-i18n="product.step2">核对图案比例、实体底板、色数与颗数。</li><li data-i18n="product.step3">导出逐格色号施工图；大型图纸使用分页打印。</li></ol></section>
         <section class="product-card"><h3 data-i18n="product.privacyTitle">隐私与恢复</h3><p data-i18n="product.privacyText">原图不会上传项目服务器。未完成图纸会保存在本浏览器的本地存储中，且不包含参考原图；你可以随时清除。托管平台仍可能按其隐私政策处理基础访问与安全日志。</p></section>
         <section class="product-card"><h3 data-i18n="product.colorTitle">色彩与品牌声明</h3><p data-i18n="product.colorText">当前色板使用 MARD 兼容基础 221 色号数据。本项目是独立工具，与相关品牌不存在隶属或官方授权关系。屏幕 HEX 只作近似匹配；批量制作前请用所购品牌实物色卡复核。</p></section>
         <section class="product-card"><h3 data-i18n="product.performanceTitle">底板与性能</h3><p data-i18n="product.performanceText">50 格与 52 格底板可能不兼容，请按真实板型选择。大尺寸图纸会自动限制缩放和导出像素，避免低内存手机崩溃；原图细节无法突破豆格数量的物理上限。</p></section>
       </div>
-      <div class="product-links"><a href="https://github.com/zwhy149/bead-grid-studio" target="_blank" rel="noopener noreferrer" data-i18n="product.repo">开源仓库</a><a href="./privacy.html" data-i18n="product.privacy">隐私说明</a><a href="./terms.html" data-i18n="product.terms">使用条款</a><a href="./LICENSE.txt">Apache-2.0</a><a href="./NOTICE.txt" data-i18n="footer.notices">第三方许可</a><a href="./version.json" data-i18n="product.version">版本信息</a></div>
+      <div class="product-links"><a href="https://github.com/RyanLiying/starpicdots" target="_blank" rel="noopener noreferrer" data-i18n="product.repo">开源仓库</a><a href="./privacy.html" data-i18n="product.privacy">隐私说明</a><a href="./terms.html" data-i18n="product.terms">使用条款</a><a href="./LICENSE.txt">Apache-2.0</a><a href="./NOTICE.txt" data-i18n="footer.notices">第三方许可</a><a href="./version.json" data-i18n="product.version">版本信息</a></div>
     </div>
     <div class="crop-foot"><button class="button primary" id="productOkBtn" type="button" data-i18n="action.ok">我知道了</button></div>
   </dialog>

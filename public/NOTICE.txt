@@ -1,3 +1,14 @@
+StarPicDots / 海星图豆
+Copyright 2026 StarPicDots contributors
+
+Based on the open-source project Bead Grid Studio (https://github.com/zwhy149/bead-grid-studio), licensed under Apache-2.0.
+本项目基于开源项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0）二次开发。
+
+Modifications: rebranded to 海星图豆/StarPicDots; added multi-repository bead inventory with inventory-constrained conversion and a missing-color report.
+
+------------------------------------------------------------------------
+Upstream project notice (retained for attribution):
+
 Bead Grid Studio / 豆格工坊
 Copyright 2026 Bead Grid Studio contributors
 

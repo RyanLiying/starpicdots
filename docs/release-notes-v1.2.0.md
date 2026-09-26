@@ -1,5 +1,7 @@
 # Bead Grid Studio v1.2.0
 
+> 历史发布记录：来自上游项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0），仅为署名保留。当前产品为海星图豆 / StarPicDots。
+
 ## What's new
 
 - **Making Assistant** isolates one active color on the working canvas, dims unrelated cells, and marks completed colors with a clear check.

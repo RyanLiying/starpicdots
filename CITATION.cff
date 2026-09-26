@@ -1,11 +1,11 @@
 cff-version: 1.2.0
-message: "If this software supports your research or teaching, cite the repository release."
-title: "Bead Grid Studio"
+message: "If this software supports your research or teaching, cite the repository release. StarPicDots is based on the open-source project Bead Grid Studio (https://github.com/zwhy149/bead-grid-studio), licensed under Apache-2.0."
+title: "StarPicDots"
 type: software
 authors:
-  - name: "zwhy149"
-repository-code: "https://github.com/zwhy149/bead-grid-studio"
-url: "https://zwhy149.github.io/bead-grid-studio/"
-version: 1.2.0
-date-released: 2026-08-26
+  - name: "StarPicDots contributors"
+repository-code: "https://github.com/RyanLiying/starpicdots"
+url: "https://ryanliying.github.io/starpicdots/"
+version: 1.0.0
+date-released: 2026-09-26
 license: Apache-2.0

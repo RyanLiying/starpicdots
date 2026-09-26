@@ -1,8 +1,10 @@
-# Fork and deploy your own Bead Grid Studio
+# Fork and deploy your own StarPicDots
 
 [简体中文](deployment.zh-CN.md) · **English**
 
-Bead Grid Studio is a static browser application. Image decoding and conversion stay on the user's device; the hosted files do not provide account, payment, license-key, image-upload, or conversion APIs.
+StarPicDots is based on the open-source project [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio), licensed under Apache-2.0.
+
+StarPicDots is a static browser application. Image decoding and conversion stay on the user's device; the hosted files do not provide account, payment, license-key, image-upload, or conversion APIs.
 
 ## Your own site in four steps
 
@@ -20,7 +22,7 @@ After it works, you can change the name, interface, palette, language, or export
 
 ## Before choosing a host
 
-- Use the existing [live demo](https://zwhy149.github.io/bead-grid-studio/) when you only want to make patterns.
+- Use the existing [live demo](https://ryanliying.github.io/starpicdots/) when you only want to make patterns.
 - Deploy a fork when you want your own URL, branding, update schedule, or security headers.
 - Never put payment secrets, card-key validation, authorization decisions, or order data in this static client. Those require a separately reviewed server-side service.
 
@@ -34,7 +36,7 @@ This repository already contains `.github/workflows/pages.yml`. It installs depe
 4. Open the **Actions** tab. GitHub may require you to enable workflows on a newly created fork.
 5. Select **Deploy GitHub Pages** and run it, or push a commit to `main`.
 6. Wait for both the build and deploy jobs to become green.
-7. Open `https://YOUR-USERNAME.github.io/bead-grid-studio/`.
+7. Open `https://YOUR-USERNAME.github.io/starpicdots/`.
 
 Do not commit the generated `dist` directory. The workflow builds it from source. GitHub documents the required Pages permissions and artifact/deploy actions in [Using custom workflows with GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
@@ -72,8 +74,8 @@ Cloudflare Pages and other hosts that implement the `_headers` convention can ap
 Direct Upload is useful when you do not want to connect a Git account.
 
 ```bash
-git clone https://github.com/zwhy149/bead-grid-studio.git
-cd bead-grid-studio
+git clone https://github.com/RyanLiying/starpicdots.git
+cd starpicdots
 npm ci
 npm run build
 ```

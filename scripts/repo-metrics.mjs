@@ -1,4 +1,4 @@
-const DEFAULT_REPOSITORY = 'zwhy149/bead-grid-studio';
+const DEFAULT_REPOSITORY = 'RyanLiying/starpicdots';
 const API_ROOT = 'https://api.github.com';
 const API_VERSION = '2022-11-28';
 const PER_PAGE = 100;
@@ -15,7 +15,7 @@ function requestHeaders() {
   const headers = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': API_VERSION,
-    'User-Agent': 'bead-grid-studio-repo-metrics',
+    'User-Agent': 'starpicdots-repo-metrics',
   };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   return headers;
@@ -91,7 +91,7 @@ async function main() {
     0,
   );
 
-  console.log(`Bead Grid Studio repository metrics — ${repository}`);
+  console.log(`StarPicDots repository metrics — ${repository}`);
   console.log(`Collected: ${new Date().toISOString()}`);
   console.log('');
   console.log(`Stars:       ${formatNumber(repo.stargazers_count)}`);

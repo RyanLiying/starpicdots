@@ -2,6 +2,17 @@
 
 All notable changes are documented here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.0.0 — 2026-09-26
+
+- Rebranded the app to 海星图豆 / StarPicDots (PWA short name `StarPD`).
+- Added multi-repository 豆仓库 (bead inventory) with inventory-constrained conversion and a missing-color report.
+- Based on Bead Grid Studio v1.2.0 (https://github.com/zwhy149/bead-grid-studio, Apache-2.0). Entries below 1.0.0 are retained upstream release history.
+
+### Modifications (Apache-2.0 §4b)
+
+- Rebranded in-code strings, zh-CN/en-US i18n dictionaries, repository docs, tests, and notices from 豆格工坊 / Bead Grid Studio to 海星图豆 / StarPicDots.
+- Added multi-repository bead inventory with inventory-constrained conversion and a missing-color report.
+
 ## [1.2.0] - 2026-08-26
 
 ### Added

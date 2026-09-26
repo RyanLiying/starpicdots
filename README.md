@@ -1,8 +1,12 @@
-# 拼豆图纸生成器｜豆格工坊（图片转拼豆 / 拼豆像素画）
+# 拼豆图纸生成器｜海星图豆 StarPicDots（图片转拼豆 / 拼豆像素画）
 
 <p align="center">
   <strong>把图片变成可编辑、可打印的拼豆施工图。</strong><br>
-  Bead Grid Studio 支持图片转拼豆、拼豆像素画编辑、自动配色、逐格色号、辅助线与用料统计，全程在你的浏览器本地完成。
+  海星图豆（StarPicDots）支持图片转拼豆、拼豆像素画编辑、自动配色、逐格色号、辅助线与用料统计，全程在你的浏览器本地完成。
+</p>
+
+<p align="center">
+  本项目基于开源项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0）二次开发。
 </p>
 
 <p align="center">
@@ -10,16 +14,16 @@
 </p>
 
 <p align="center">
-  <a href="https://zwhy149.github.io/bead-grid-studio/?lang=zh-CN"><strong>🚀 在线体验</strong></a> ·
-  <a href="https://github.com/zwhy149/bead-grid-studio/releases/latest"><strong>⬇ 离线版 / GitHub Release</strong></a> ·
+  <a href="https://ryanliying.github.io/starpicdots/?lang=zh-CN"><strong>🚀 在线体验</strong></a> ·
+  <a href="https://github.com/RyanLiying/starpicdots/releases/latest"><strong>⬇ 离线版 / GitHub Release</strong></a> ·
   <a href="#30-秒快速开始"><strong>30 秒上手</strong></a> ·
-  <a href="https://github.com/zwhy149/bead-grid-studio"><strong>⭐ GitHub Star</strong></a>
+  <a href="https://github.com/RyanLiying/starpicdots"><strong>⭐ GitHub Star</strong></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/zwhy149/bead-grid-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/zwhy149/bead-grid-studio/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/RyanLiying/starpicdots/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/RyanLiying/starpicdots/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-87351c"></a>
-  <a href="https://github.com/zwhy149/bead-grid-studio/releases"><img alt="Release" src="https://img.shields.io/github/v/release/zwhy149/bead-grid-studio?display_name=tag"></a>
+  <a href="https://github.com/RyanLiying/starpicdots/releases"><img alt="Release" src="https://img.shields.io/github/v/release/RyanLiying/starpicdots?display_name=tag"></a>
 </p>
 
 ## 示例 / Examples
@@ -47,7 +51,7 @@
 
 ## 30 秒快速开始
 
-1. 打开[在线版](https://zwhy149.github.io/bead-grid-studio/?lang=zh-CN)。
+1. 打开[在线版](https://ryanliying.github.io/starpicdots/?lang=zh-CN)。
 2. 点击 **试试示例**，不需要先准备图片，几秒钟即可看到真实火箭图纸。
 3. 选择图案长边格数或真实底板；不确定时保留自动推荐。
 4. 根据需要调整颜色或用画笔修正一两格。
@@ -60,8 +64,8 @@
 
 | 你想做什么 | 最省事的入口 | 是否需要安装 |
 | --- | --- | --- |
-| 立即把图片转成拼豆图 | [打开在线版](https://zwhy149.github.io/bead-grid-studio/?lang=zh-CN) | 不需要 |
-| 断网使用或保存到 U 盘 | [从 Releases 下载单 HTML](https://github.com/zwhy149/bead-grid-studio/releases/latest) | 不需要 |
+| 立即把图片转成拼豆图 | [打开在线版](https://ryanliying.github.io/starpicdots/?lang=zh-CN) | 不需要 |
+| 断网使用或保存到 U 盘 | [从 Releases 下载单 HTML](https://github.com/RyanLiying/starpicdots/releases/latest) | 不需要 |
 | 部署成自己的公开网页 | [Fork 与部署教程](docs/deployment.zh-CN.md) | 需要 GitHub 账号；Cloudflare 可选 |
 | 修改代码或参与开发 | [开发者本地运行](#开发者本地运行) | 需要 Node.js |
 
@@ -69,9 +73,9 @@
 
 普通使用者不需要下载源码，也不需要安装 Node.js。离线版是一个完整 HTML 文件，适用于 Windows、macOS 和 Linux 的现代浏览器：
 
-1. 打开[最新 Release](https://github.com/zwhy149/bead-grid-studio/releases/latest)。
+1. 打开[最新 Release](https://github.com/RyanLiying/starpicdots/releases/latest)。
 2. 展开页面底部的 **Assets**。
-3. 下载名字类似 `bead-grid-studio-vX.Y.Z.html` 的文件，其中 `X.Y.Z` 是版本号。
+3. 下载名字类似 `starpicdots-vX.Y.Z.html` 的文件，其中 `X.Y.Z` 是版本号。
 4. 不要把 GitHub 自动生成的 `Source code` ZIP 当作离线应用。
 5. 双击 HTML 并选择 Chrome、Edge、Firefox 或 Safari 打开。
 
@@ -79,7 +83,7 @@
 
 ```powershell
 # Windows PowerShell：先进入下载目录
-Get-FileHash .\bead-grid-studio-vX.Y.Z.html -Algorithm SHA256
+Get-FileHash .\starpicdots-vX.Y.Z.html -Algorithm SHA256
 Get-Content .\SHA256SUMS.txt
 ```
 
@@ -88,7 +92,7 @@ Get-Content .\SHA256SUMS.txt
 sha256sum --check SHA256SUMS.txt
 
 # macOS
-shasum -a 256 bead-grid-studio-vX.Y.Z.html
+shasum -a 256 starpicdots-vX.Y.Z.html
 ```
 
 手机用户优先使用在线 PWA，并通过浏览器“添加到主屏幕”。PWA 必须先在 HTTPS 网页中完整加载一次，之后才能用缓存断网打开。草稿保存在当前浏览器站点数据中；更换浏览器或清理缓存前，请导出 JSON 工程。
@@ -135,8 +139,8 @@ Fork → 启用 GitHub Actions → Settings → Pages → Deploy
 需要 Node.js 22.12 或更高版本：
 
 ```bash
-git clone https://github.com/zwhy149/bead-grid-studio.git
-cd bead-grid-studio
+git clone https://github.com/RyanLiying/starpicdots.git
+cd starpicdots
 npm ci
 npm run dev
 ```
@@ -162,12 +166,12 @@ npm run qa
 ## 帮助项目成长
 
 - ⭐ **Star** — 如果这个工具帮你节省了时间。
-- 🐛 **反馈 Bug** — 如果转换结果出现异常，请提交 [Issue](https://github.com/zwhy149/bead-grid-studio/issues/new/choose)。
-- 💡 **提出建议** — 如果你希望增加实用功能，欢迎前往 [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions)。
+- 🐛 **反馈 Bug** — 如果转换结果出现异常，请提交 [Issue](https://github.com/RyanLiying/starpicdots/issues/new/choose)。
+- 💡 **提出建议** — 如果你希望增加实用功能，欢迎前往 [Discussions](https://github.com/RyanLiying/starpicdots/discussions)。
 - 🔀 **Fork** — 定制自己的色板、语言、界面或流程。
 - 💻 **参与贡献** — 阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，选择一个 Issue 并提交 Pull Request。
 
-第一次参与可先查看 [`good first issue`](https://github.com/zwhy149/bead-grid-studio/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
+第一次参与可先查看 [`good first issue`](https://github.com/RyanLiying/starpicdots/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 
 维护者可以运行 `npm run metrics` 查看 GitHub 官方公开 API 返回的 Stars、Forks、Open Issues 和真实 Release asset 下载量。该脚本不在网页中运行，也不会追踪应用访问者。
 
@@ -218,6 +222,6 @@ docs/                     架构、算法、部署、色板来源和 ADR
 
 ## 许可证
 
-代码采用 [Apache-2.0](LICENSE)。第三方数据和构建工具归属见 [NOTICE](NOTICE)。许可证允许商业复用，但不授予“豆格工坊”名称、Logo 或第三方品牌标识的使用权。
+代码采用 [Apache-2.0](LICENSE)。第三方数据和构建工具归属见 [NOTICE](NOTICE)。许可证允许商业复用，但不授予“海星图豆”“StarPicDots”名称、Logo 或第三方品牌标识的使用权。本项目基于上游项目 [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio)（Apache-2.0）二次开发。
 
 如果项目确实帮你省去了一次手工描图，可以 Star 仓库、分享给其他拼豆爱好者，或提交可复现的改进建议。Star 不会解锁任何功能。

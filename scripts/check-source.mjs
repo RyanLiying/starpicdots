@@ -147,7 +147,10 @@ check(['local-first fuse-bead pattern generator', 'editable', 'printable', 'per-
 check(readmeZh.includes('README.en.md') && readmeEn.includes('README.md'), 'README language switch is incomplete');
 check(deployZh.includes('GitHub Pages') && deployZh.includes('Cloudflare Pages') && deployEn.includes('GitHub Pages') && deployEn.includes('Cloudflare Pages'), 'bilingual deployment guide is incomplete');
 check(privacyEn.includes('<html lang="en-US">') && termsEn.includes('<html lang="en-US">'), 'English privacy or terms page is missing');
-const canonicalSitemapUrl = 'https://zwhy149.github.io/bead-grid-studio/sitemap.xml';
+const SITE_URL = 'https://ryanliying.github.io/starpicdots/';
+const SITE_ORIGIN = new URL(SITE_URL).origin;
+const SITE_BASE_PATH = new URL(SITE_URL).pathname;
+const canonicalSitemapUrl = `${SITE_URL}sitemap.xml`;
 const robotDirectives = new Set(robots.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
 check(robotDirectives.has(`Sitemap: ${canonicalSitemapUrl}`), 'robots.txt does not expose the canonical sitemap');
 
@@ -158,8 +161,8 @@ const sitemapUrls = new Set([
 const isOfficialSiteUrl = (value) => {
   try {
     const url = new URL(value);
-    return url.origin === 'https://zwhy149.github.io'
-      && url.pathname.startsWith('/bead-grid-studio/')
+    return url.origin === SITE_ORIGIN
+      && url.pathname.startsWith(SITE_BASE_PATH)
       && url.username === ''
       && url.password === ''
       && url.hash === '';
@@ -169,13 +172,13 @@ const isOfficialSiteUrl = (value) => {
 };
 check([...sitemapUrls].every(isOfficialSiteUrl), 'sitemap contains a malformed or non-project URL');
 const requiredSitemapUrls = [
-  'https://zwhy149.github.io/bead-grid-studio/',
-  'https://zwhy149.github.io/bead-grid-studio/?lang=zh-CN',
-  'https://zwhy149.github.io/bead-grid-studio/?lang=en-US',
-  'https://zwhy149.github.io/bead-grid-studio/privacy.html',
-  'https://zwhy149.github.io/bead-grid-studio/privacy.en.html',
-  'https://zwhy149.github.io/bead-grid-studio/terms.html',
-  'https://zwhy149.github.io/bead-grid-studio/terms.en.html',
+  SITE_URL,
+  `${SITE_URL}?lang=zh-CN`,
+  `${SITE_URL}?lang=en-US`,
+  `${SITE_URL}privacy.html`,
+  `${SITE_URL}privacy.en.html`,
+  `${SITE_URL}terms.html`,
+  `${SITE_URL}terms.en.html`,
 ];
 check(requiredSitemapUrls.every((url) => sitemapUrls.has(url)), 'sitemap is missing a required localized URL');
 

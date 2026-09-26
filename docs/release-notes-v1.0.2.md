@@ -1,3 +1,5 @@
+> 历史发布记录：来自上游项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0），仅为署名保留。当前产品为海星图豆 / StarPicDots。
+
 ## Bilingual repository and beginner onboarding
 
 - Simplified Chinese is now the default repository landing language, with a complete English README and two-way language navigation.

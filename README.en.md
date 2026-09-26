@@ -1,4 +1,4 @@
-# Bead Grid Studio — Local-first Fuse-bead Pattern Generator
+# StarPicDots — Online Fuse-bead Pattern Studio
 
 <p align="center">
   <strong>Turn images into editable, printable fuse-bead patterns.</strong><br>
@@ -6,23 +6,27 @@
 </p>
 
 <p align="center">
+  StarPicDots (海星图豆) is based on the open-source project <a href="https://github.com/zwhy149/bead-grid-studio">Bead Grid Studio</a>, licensed under Apache-2.0.
+</p>
+
+<p align="center">
   <a href="README.md"><strong>简体中文</strong></a> · <strong>English</strong>
 </p>
 
 <p align="center">
-  <a href="https://zwhy149.github.io/bead-grid-studio/?lang=en-US"><strong>🚀 Live Demo</strong></a> ·
-  <a href="https://github.com/zwhy149/bead-grid-studio/releases/latest"><strong>⬇ Offline / GitHub Release</strong></a> ·
+  <a href="https://ryanliying.github.io/starpicdots/?lang=en-US"><strong>🚀 Live Demo</strong></a> ·
+  <a href="https://github.com/RyanLiying/starpicdots/releases/latest"><strong>⬇ Offline / GitHub Release</strong></a> ·
   <a href="#30-second-quick-start"><strong>30-second Quick Start</strong></a> ·
-  <a href="https://github.com/zwhy149/bead-grid-studio"><strong>⭐ Star on GitHub</strong></a>
+  <a href="https://github.com/RyanLiying/starpicdots"><strong>⭐ Star on GitHub</strong></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/zwhy149/bead-grid-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/zwhy149/bead-grid-studio/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/RyanLiying/starpicdots/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/RyanLiying/starpicdots/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-87351c"></a>
-  <a href="https://github.com/zwhy149/bead-grid-studio/releases"><img alt="Release" src="https://img.shields.io/github/v/release/zwhy149/bead-grid-studio?display_name=tag"></a>
+  <a href="https://github.com/RyanLiying/starpicdots/releases"><img alt="Release" src="https://img.shields.io/github/v/release/RyanLiying/starpicdots?display_name=tag"></a>
 </p>
 
-Bead Grid Studio is a **local-first fuse-bead pattern generator**. It has no account, image-upload API, analytics SDK, or cloud conversion service.
+StarPicDots is a **local-first fuse-bead pattern generator**. It has no account, image-upload API, analytics SDK, or cloud conversion service.
 
 ## Examples
 
@@ -49,7 +53,7 @@ Both sides use the repository's original rocket fixture. The right side is a scr
 
 ## 30-second Quick Start
 
-1. Open the [live demo](https://zwhy149.github.io/bead-grid-studio/?lang=en-US).
+1. Open the [live demo](https://ryanliying.github.io/starpicdots/?lang=en-US).
 2. Select **Try a Sample**. You do not need an image to see a real rocket pattern in seconds.
 3. Choose a long-side cell count or physical board; keep the recommendation if unsure.
 4. Adjust colors or touch up a few cells when needed.
@@ -62,8 +66,8 @@ You can instead select **Choose Image** and use PNG, JPEG, WebP, or GIF. The ima
 
 | Goal | Fastest route | Installation |
 | --- | --- | --- |
-| Convert an image now | [Open the live demo](https://zwhy149.github.io/bead-grid-studio/?lang=en-US) | None |
-| Work offline or carry the app on a USB drive | [Download the portable HTML](https://github.com/zwhy149/bead-grid-studio/releases/latest) | None |
+| Convert an image now | [Open the live demo](https://ryanliying.github.io/starpicdots/?lang=en-US) | None |
+| Work offline or carry the app on a USB drive | [Download the portable HTML](https://github.com/RyanLiying/starpicdots/releases/latest) | None |
 | Publish your own copy | [Fork and deployment guide](docs/deployment.md) | GitHub account; Cloudflare optional |
 | Modify or contribute code | [Run locally](#run-locally-for-development) | Node.js |
 
@@ -71,9 +75,9 @@ You can instead select **Choose Image** and use PNG, JPEG, WebP, or GIF. The ima
 
 Regular users do not need the source code or Node.js. The offline app is one self-contained HTML file for modern browsers on Windows, macOS, and Linux:
 
-1. Open the [latest Release](https://github.com/zwhy149/bead-grid-studio/releases/latest).
+1. Open the [latest Release](https://github.com/RyanLiying/starpicdots/releases/latest).
 2. Expand **Assets** near the bottom of the Release page.
-3. Download the file named like `bead-grid-studio-vX.Y.Z.html`, where `X.Y.Z` is the version.
+3. Download the file named like `starpicdots-vX.Y.Z.html`, where `X.Y.Z` is the version.
 4. Do not use GitHub's automatically generated `Source code` ZIP as the offline app.
 5. Double-click the HTML and open it with Chrome, Edge, Firefox, or Safari.
 
@@ -81,7 +85,7 @@ The portable HTML embeds the application, styles, Apache-2.0 license, and third-
 
 ```powershell
 # Windows PowerShell: run from the download directory
-Get-FileHash .\bead-grid-studio-vX.Y.Z.html -Algorithm SHA256
+Get-FileHash .\starpicdots-vX.Y.Z.html -Algorithm SHA256
 Get-Content .\SHA256SUMS.txt
 ```
 
@@ -90,7 +94,7 @@ Get-Content .\SHA256SUMS.txt
 sha256sum --check SHA256SUMS.txt
 
 # macOS
-shasum -a 256 bead-grid-studio-vX.Y.Z.html
+shasum -a 256 starpicdots-vX.Y.Z.html
 ```
 
 On phones, prefer the hosted PWA and use the browser's “Add to Home Screen” action. The PWA must load once from HTTPS before its cached pages can open offline. Drafts live in the current browser's site data; export a JSON project before switching browsers or clearing that data.
@@ -137,8 +141,8 @@ The project does not promise lossless reproduction at 16 or 24 cells. It protect
 Node.js 22.12 or newer is required:
 
 ```bash
-git clone https://github.com/zwhy149/bead-grid-studio.git
-cd bead-grid-studio
+git clone https://github.com/RyanLiying/starpicdots.git
+cd starpicdots
 npm ci
 npm run dev
 ```
@@ -163,13 +167,13 @@ See [ROADMAP.md](ROADMAP.md) for the full roadmap.
 
 ## Help the project grow
 
-- ⭐ **Star** — if Bead Grid Studio saves you time.
-- 🐛 **Report a bug** — if a conversion behaves unexpectedly; open an [Issue](https://github.com/zwhy149/bead-grid-studio/issues/new/choose).
-- 💡 **Suggest an idea** — if something would improve your workflow; use [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions).
+- ⭐ **Star** — if StarPicDots saves you time.
+- 🐛 **Report a bug** — if a conversion behaves unexpectedly; open an [Issue](https://github.com/RyanLiying/starpicdots/issues/new/choose).
+- 💡 **Suggest an idea** — if something would improve your workflow; use [Discussions](https://github.com/RyanLiying/starpicdots/discussions).
 - 🔀 **Fork** — customize palettes, languages, UI, or workflows.
 - 💻 **Contribute** — read [CONTRIBUTING.md](CONTRIBUTING.md), pick an Issue, and send a Pull Request.
 
-For a first contribution, browse [`good first issue`](https://github.com/zwhy149/bead-grid-studio/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+For a first contribution, browse [`good first issue`](https://github.com/RyanLiying/starpicdots/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
 Maintainers can run `npm run metrics` to read Stars, Forks, Open Issues, and real Release asset download counts from GitHub's public API. The script is not included in the web app and never tracks app visitors.
 
@@ -220,6 +224,6 @@ docs/                     architecture, algorithm, deployment, provenance, and A
 
 ## License
 
-Code is licensed under [Apache-2.0](LICENSE). Third-party data and build-tool notices are in [NOTICE](NOTICE). The license permits commercial reuse; it does not grant rights to the Bead Grid Studio name, logo, or third-party marks.
+Code is licensed under [Apache-2.0](LICENSE). Third-party data and build-tool notices are in [NOTICE](NOTICE). The license permits commercial reuse; it does not grant rights to the StarPicDots / 海星图豆 name, logo, or third-party marks. This project is based on the upstream [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio) (Apache-2.0).
 
 If the project genuinely saves you a manual redraw, consider starring it, sharing it with another maker, or filing a reproducible improvement. Stars never unlock features.

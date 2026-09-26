@@ -66,7 +66,7 @@ export function formatNumber(value, options) {
 }
 
 export function localizedAppUrl(locale = activeLocale) {
-  const url = new URL('https://zwhy149.github.io/bead-grid-studio/');
+    const url = new URL('https://ryanliying.github.io/starpicdots/');
   url.searchParams.set('lang', normalizeLocale(locale) || DEFAULT_LOCALE);
   return url.toString();
 }

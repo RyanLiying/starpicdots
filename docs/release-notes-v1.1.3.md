@@ -1,5 +1,7 @@
 # Bead Grid Studio v1.1.3
 
+> 历史发布记录：来自上游项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0），仅为署名保留。当前产品为海星图豆 / StarPicDots。
+
 ## What's new
 
 - **Copyable bead shopping list.** Material Counts now has a one-tap “复制购豆清单 / Copy bead list” action. It copies every color code, localized name, quantity, and share as plain text — ready to paste into notes or an order message — with a fallback path for browsers without the async clipboard API.

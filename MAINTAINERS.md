@@ -2,7 +2,9 @@
 
 ## Primary Maintainer
 
-- [@zwhy149](https://github.com/zwhy149)
+- [StarPicDots contributors](https://github.com/RyanLiying/starpicdots)
+
+StarPicDots is based on the upstream project [Bead Grid Studio](https://github.com/zwhy149/bead-grid-studio) (Apache-2.0), originally maintained by [@zwhy149](https://github.com/zwhy149).
 
 The project is currently maintained by its primary maintainer, who is responsible for:
 

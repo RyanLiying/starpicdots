@@ -7,6 +7,23 @@ import {
 } from './core/geometry.js';
 import { LEGACY_64_HEX } from './palettes/mard221.js';
 import { DEFAULT_PALETTE_PROVIDER_ID, getPaletteProvider } from './palettes/catalog.js';
+import {
+  activeInventoryCodes,
+  computeMissingColors,
+  createInventory,
+  getActiveInventory,
+  getEffectivePalette,
+  inventoryWarnings,
+  loadInventories,
+  parseInventories,
+  parseInventoryStore,
+  removeInventory,
+  renameActiveInventory,
+  saveInventories,
+  serializeInventoryStore,
+  setActiveInventory,
+  updateActiveCodes,
+} from './core/inventory.js';
 import SAMPLE_IMAGE_URL from '../tests/fixtures/rocket-badge.png?inline';
 import {
   applyDocumentTranslations,
@@ -24,8 +41,8 @@ import {
     const BASE_CELL = 16;
     const MAX_HISTORY = 50;
     const PROJECT_VERSION = 2;
-    const APP_VERSION = '1.2.0';
-    const BUILD_DATE = '2026-08-26';
+    const APP_VERSION = '1.0.0';
+    const BUILD_DATE = '2026-09-26';
     const DRAFT_KEY = 'bead-grid-studio:draft:v2';
     const WORKER_TIMEOUT_MS = 12000;
     const PALETTE_PROVIDER = getPaletteProvider(DEFAULT_PALETTE_PROVIDER_ID);
@@ -40,6 +57,7 @@ import {
       'applySizeBtn','undoBtn','redoBtn','zoomOutBtn','zoomInBtn','zoomValue','topExportBtn','mirrorHBtn','mirrorVBtn','rotateBtn',
       'clearBtn','saveProjectBtn','loadProjectBtn','projectInput','exportPngBtn','printBtn','majorGridStep','referenceCanvas','patternCanvas',
       'topRuler','leftRuler','boardShell','canvasStack','canvasViewport','emptyState','legendStrip','paletteGrid','paletteSearch',
+      'inventoryEnabled','inventoryCountLabel','inventorySearch','inventoryGrid','inventorySelect','inventoryNewBtn','inventoryRenameBtn','inventoryDeleteBtn','inventorySelectAllBtn','inventoryClearBtn','inventoryImportBtn','inventoryExportBtn','inventoryImportInput','inventoryWarning','missingSection','missingList','missingCountLabel',
       'paletteCountLabel','totalBeads','usedColors','emptyCells','statsList','copyStatsBtn','selectedColorSwatch','selectedColorName','selectedColorCode',
       'statusSize','statusColors','statusBeads','statusZoom','statusMessage','gridToggle','rulerToggle','codesToggle','fitCanvasBtn','convertOverlay',
       'progressText','cancelConvertBtn','toast','mobileScrim','controlPanel','palettePanel','printSheet','printImage','printPages',
@@ -63,6 +81,7 @@ import {
       zoom: 1,
       paletteMode: 'mard221',
       paletteSeries: 'all',
+      inventorySeries: 'all',
       maxColors: 32,
       majorGridStep: 10,
       mergeStrength: 10,
@@ -99,6 +118,11 @@ import {
       cancelConversion: null,
       conversionJob: 0,
       sourceLoadJob: 0,
+      inventory: { enabled: false, codes: null },
+      inventories: null,
+      missingColors: null,
+      inventoryWarnings: null,
+      inventoryWarning: null,
       hasAutoFit: false,
       sizeMode: 'pattern',
       aspectLock: true,
@@ -703,6 +727,86 @@ import {
       return PALETTE.filter(color=>!color.isTransparent);
     }
 
+    function inventoryCodesOrNull() {
+      return state.inventory.enabled && state.inventory.codes ? state.inventory.codes : null;
+    }
+
+    function syncInventoryDiagnostics() {
+      const codes = inventoryCodesOrNull();
+      state.inventoryWarnings = codes ? inventoryWarnings(PALETTE, codes) : null;
+      state.inventoryWarning = state.inventoryWarnings?.empty ? 'empty' : null;
+    }
+
+    function setInventoryEnabled(enabled) {
+      const next = Boolean(enabled);
+      if (state.inventory.enabled === next) return;
+      state.inventory.enabled = next;
+      state.missingColors = null;
+      syncInventoryDiagnostics();
+      if (state.referenceImage) convertImage();
+    }
+
+    function inventoryValidCodesByProvider() {
+      return { [PALETTE_PROVIDER.id]: PALETTE.map(color => color.code) };
+    }
+
+    // state.inventory 是激活仓库的派生视图：store 或激活仓库变化后必须调用此函数刷新。
+    function refreshDerivedInventory() {
+      state.inventory.codes = activeInventoryCodes(state.inventories);
+      state.missingColors = null;
+      syncInventoryDiagnostics();
+    }
+
+    // 多仓库统一提交入口：替换 store、持久化、刷新派生视图与面板，必要时重新转换。
+    function commitInventoryStore(next, { reconvert = true } = {}) {
+      state.inventories = next;
+      saveInventories(localStorage, state.inventories, inventoryValidCodesByProvider());
+      refreshDerivedInventory();
+      renderInventorySwitcher();
+      renderInventoryGrid();
+      renderInventoryPanel();
+      if (reconvert && state.referenceImage) convertImage();
+    }
+
+    function setInventoryCodes(codes) {
+      const next = codes instanceof Set ? new Set(codes) : new Set(codes || []);
+      state.inventories = updateActiveCodes(state.inventories, next);
+      saveInventories(localStorage, state.inventories, inventoryValidCodesByProvider());
+      refreshDerivedInventory();
+      if (state.referenceImage) convertImage();
+    }
+
+    function switchInventory(id) {
+      const next = setActiveInventory(state.inventories, id);
+      if (next === state.inventories) return;
+      commitInventoryStore(next);
+    }
+
+    function addInventory() {
+      const chosen = window.prompt(t('prompt.inventoryName'), '');
+      if (chosen === null || !chosen.trim()) return;
+      commitInventoryStore(createInventory(state.inventories, { name: chosen, providerId: PALETTE_PROVIDER.id }));
+      toast('toast.inventoryCreated','success',{name:getActiveInventory(state.inventories).name});
+    }
+
+    function renameCurrentInventory() {
+      const active = getActiveInventory(state.inventories);
+      if (!active) return;
+      const chosen = window.prompt(t('prompt.inventoryRename'), active.name);
+      if (chosen === null || !chosen.trim()) return;
+      commitInventoryStore(renameActiveInventory(state.inventories, chosen));
+      toast('toast.inventoryRenamed','success',{name:getActiveInventory(state.inventories).name});
+    }
+
+    function deleteCurrentInventory() {
+      if (!state.inventories || state.inventories.items.length <= 1) return;
+      const active = getActiveInventory(state.inventories);
+      if (!active) return;
+      if (!window.confirm(t('confirm.inventoryDelete',{name:active.name}))) return;
+      commitInventoryStore(removeInventory(state.inventories, active.id));
+      toast('toast.inventoryDeleted','info',{name:active.name});
+    }
+
     function cellSize() { return Math.max(1, Math.round(BASE_CELL * state.zoom)); }
 
     function maxSafeZoom(cols=state.cols,rows=state.rows) {
@@ -810,6 +914,172 @@ import {
           els.paletteGrid.appendChild(button);
         });
       els.paletteCountLabel.textContent=state.paletteSeries==='all'?t('palette.countAll'):t('palette.countSeries',{series:state.paletteSeries,count:visible.length});
+    }
+
+    const PALETTE_BY_CODE = new Map(PALETTE.map(color => [color.code, color]));
+
+    // 库存选择器与 getAllowedPalette 同一规则：透明豆 H1 不参与，也不显示。
+    function inventoryPickableColors() {
+      return PALETTE.filter(color => !color.isTransparent);
+    }
+
+    function renderInventorySwitcher() {
+      if (!els.inventorySelect) return;
+      const store = state.inventories || { activeId: null, items: [] };
+      els.inventorySelect.innerHTML = '';
+      store.items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name;
+        els.inventorySelect.appendChild(option);
+      });
+      els.inventorySelect.value = store.activeId || '';
+      const single = store.items.length <= 1;
+      els.inventoryDeleteBtn.disabled = single;
+      els.inventoryDeleteBtn.title = single ? t('inventory.deleteLastHint') : '';
+    }
+
+    function renderInventoryGrid() {
+      if (!els.inventoryGrid) return;
+      const rawQuery = els.inventorySearch.value.trim().toLowerCase();
+      const query = rawQuery.replace(/^([a-hm])0+(\d+)$/,'$1$2');
+      const owned = state.inventory.codes instanceof Set ? state.inventory.codes : new Set();
+      els.inventoryGrid.innerHTML = '';
+      const visible = inventoryPickableColors().filter(color =>
+        (state.inventorySeries === 'all' || color.series === state.inventorySeries)
+        && (!query || color.code.toLowerCase().includes(query) || localizedColorName(color).toLowerCase().includes(query) || color.name.includes(query) || color.hex.toLowerCase().includes(query)));
+      visible.forEach(color => {
+        const button = document.createElement('button');
+        button.className = 'inventory-color';
+        button.type = 'button';
+        button.dataset.inventoryCode = color.code;
+        button.setAttribute('aria-label', t('aria.inventoryColor',{code:color.code,name:localizedColorName(color)}));
+        button.setAttribute('aria-pressed', String(owned.has(color.code)));
+        button.title = t('title.color',{code:color.code,name:localizedColorName(color),hex:color.hex.toUpperCase()});
+        button.innerHTML = `<span class="color-bead" style="background:${color.displayHex}"></span><b>${color.code}</b>`;
+        button.addEventListener('click', () => toggleInventoryColor(color.code, button));
+        button.addEventListener('keydown', event => {
+          if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return;
+          const buttons = [...els.inventoryGrid.querySelectorAll('.inventory-color')];
+          if (!buttons.length) return;
+          event.preventDefault();
+          const current = buttons.indexOf(button), columns = Math.max(1, Math.round(els.inventoryGrid.clientWidth/Math.max(1, button.offsetWidth + 12)));
+          let next = current;
+          if (event.key === 'ArrowLeft') next = current - 1;
+          if (event.key === 'ArrowRight') next = current + 1;
+          if (event.key === 'ArrowUp') next = current - columns;
+          if (event.key === 'ArrowDown') next = current + columns;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = buttons.length - 1;
+          buttons[Math.max(0, Math.min(buttons.length - 1, next))].focus();
+        });
+        els.inventoryGrid.appendChild(button);
+      });
+      document.querySelectorAll('[data-inventory-series]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.inventorySeries === state.inventorySeries)));
+    }
+
+    function toggleInventoryColor(code, button) {
+      const next = new Set(state.inventory.codes || []);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      setInventoryCodes(next);
+      // 单次切换只更新该色块，不重建整个网格；批量操作才走 renderInventoryGrid。
+      if (button?.isConnected && button.dataset.inventoryCode === code) {
+        button.setAttribute('aria-pressed', String(next.has(code)));
+      } else renderInventoryGrid();
+      renderInventoryPanel();
+    }
+
+    function updateInventorySummary() {
+      if (!els.inventoryEnabled) return;
+      els.inventoryEnabled.checked = state.inventory.enabled;
+      const owned = state.inventory.codes instanceof Set ? state.inventory.codes.size : 0;
+      els.inventoryCountLabel.textContent = t('inventory.count',{count:owned,total:inventoryPickableColors().length});
+      const warnings = state.inventory.enabled ? state.inventoryWarnings : null;
+      const separator = getLocale() === 'en-US' ? ', ' : '、';
+      const lines = [];
+      if (warnings) {
+        if (warnings.empty) lines.push(t('inventory.empty'));
+        else {
+          if (warnings.noWhite) lines.push(t('inventory.noWhite'));
+          if (warnings.noBlack) lines.push(t('inventory.noBlack'));
+        }
+        if (warnings.missingCodes?.length) lines.push(t('inventory.missingCodes',{codes:warnings.missingCodes.join(separator)}));
+      }
+      els.inventoryWarning.replaceChildren(...lines.map(text => {
+        const line = document.createElement('p');
+        line.textContent = text;
+        return line;
+      }));
+      els.inventoryWarning.hidden = lines.length === 0;
+    }
+
+    function renderMissingColors() {
+      if (!els.missingSection) return;
+      const rows = state.inventory.enabled && Array.isArray(state.missingColors) ? state.missingColors : [];
+      els.missingSection.hidden = rows.length === 0;
+      els.missingList.innerHTML = '';
+      if (!rows.length) return;
+      els.missingCountLabel.textContent = t('inventory.missingSummary',{count:rows.length});
+      rows.forEach(entry => {
+        const color = PALETTE_BY_CODE.get(entry.code);
+        const row = document.createElement('div');
+        row.className = 'missing-row';
+        const swatch = document.createElement('span');
+        swatch.className = 'stat-swatch';
+        swatch.style.background = entry.hex;
+        swatch.setAttribute('aria-hidden', 'true');
+        const copy = document.createElement('span');
+        copy.className = 'stat-copy';
+        const strong = document.createElement('strong');
+        strong.textContent = `${entry.code} · ${color ? localizedColorName(color) : entry.name}`;
+        const hex = document.createElement('span');
+        hex.textContent = entry.hex.toUpperCase();
+        copy.append(strong, hex);
+        const amount = document.createElement('span');
+        amount.className = 'stat-count';
+        amount.textContent = formatNumber(entry.count);
+        row.append(swatch, copy, amount);
+        els.missingList.appendChild(row);
+      });
+    }
+
+    function renderInventoryPanel() {
+      updateInventorySummary();
+      renderMissingColors();
+    }
+
+    function exportInventory() {
+      downloadBlob(new Blob([serializeInventoryStore(state.inventories)], {type:'application/json'}), `${t('file.inventory')}.json`);
+      toast('toast.inventoryExported','success');
+    }
+
+    async function importInventoryFile(file) {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const validCodes = inventoryValidCodesByProvider();
+        const importedStore = parseInventoryStore(text, validCodes);
+        if (importedStore && importedStore.items.length) {
+          // v2 文件：整体替换本机仓库（先确认）。
+          if (state.inventories?.items.length
+            && !window.confirm(t('confirm.inventoryImportReplace',{count:importedStore.items.length}))) return;
+          commitInventoryStore(importedStore);
+          toast('toast.inventoryStoreImported','success',{count:importedStore.items.length});
+          return;
+        }
+        // v1 文件（provider→色号映射）：作为单个新仓库追加，文件名作默认仓库名。
+        const parsed = parseInventories(text, validCodes);
+        if (!parsed) { toast('toast.inventoryImportInvalid','error'); return; }
+        const codes = new Set(parsed[PALETTE_PROVIDER.id] || []);
+        const stem = typeof file.name === 'string' ? file.name.replace(/\.[^.]+$/,'').trim() : '';
+        let next = createInventory(state.inventories, { name: stem || t('inventory.importedName'), providerId: PALETTE_PROVIDER.id });
+        next = updateActiveCodes(next, codes);
+        commitInventoryStore(next);
+        if (codes.size && !state.inventory.enabled) { setInventoryEnabled(true); renderInventoryPanel(); }
+        toast('toast.inventoryImported','success',{count:codes.size});
+      } catch (_) {
+        toast('toast.inventoryImportInvalid','error');
+      }
     }
 
     function makeSnapshot() {
@@ -1147,6 +1417,15 @@ import {
       return { counts, total, empty: state.grid.length - total };
     }
 
+    function countPaletteIndexCounts(buffer) {
+      const grid = new Int16Array(buffer);
+      const counts = new Map();
+      for (const value of grid) {
+        if (value >= 0 && PALETTE[value]) counts.set(value, (counts.get(value) || 0) + 1);
+      }
+      return counts;
+    }
+
     function formatShare(count, total) {
       if (!total) return { width: '0%', label: '0%' };
       const exact = Math.min(100, count / total * 100);
@@ -1348,6 +1627,7 @@ import {
       syncMakingAssistant({counts,total,rows});
       if(els.readyShareCardBtn){els.readyShareCardBtn.disabled=!state.referenceImage;els.readyShareCardBtn.title=!state.referenceImage?t('share.unavailable'):'';}
       if(state.referenceImage)updateSmartCard();
+      renderInventoryPanel();
     }
 
     function updateViewButtons() {
@@ -2586,7 +2866,11 @@ import {
         const conversionRaster=boardContained?renderReferenceRaster({contentOnly:true}):state.referenceRaster;
         const ctx = conversionRaster.getContext('2d', {willReadFrequently:true});
         const imageData = ctx.getImageData(0,0,conversionRaster.width,conversionRaster.height);
-        const palette = getAllowedPalette().map(color => ({index:color.index,code:color.code,rgb:color.rgb,lab:color.lab,cieLab:color.cieLab}));
+        const paletteEntry=color=>({index:color.index,code:color.code,rgb:color.rgb,lab:color.lab,cieLab:color.cieLab});
+        const fullPalette=getAllowedPalette();
+        const inventoryCodes=inventoryCodesOrNull();
+        const palette=getEffectivePalette(fullPalette,inventoryCodes).map(paletteEntry);
+        syncInventoryDiagnostics();
         const payload = {
           data:imageData.data,
           width:imageData.width,
@@ -2600,8 +2884,37 @@ import {
           mergeStrength:state.mergeStrength,
           protectDark:state.protectDark
         };
+        const inventoryActive=inventoryCodes!==null;
+        if(!inventoryActive)state.missingColors=null;
+        // 缺色清单需要一份完整色板的“理想”转换结果；data 必须在首个 worker 转移前复制。
+        const idealPayload=inventoryActive?{...payload,data:imageData.data.slice(),palette:fullPalette.map(paletteEntry)}:null;
+        if(!palette.length){
+          // 库存启用但过滤后为空：不调用空色板的 worker，改用完整色板计算缺色清单并产出空图纸。
+          const idealResult=await runConversion(idealPayload,jobId);
+          if (jobId !== state.conversionJob) return;
+          state.lastConversionDiagnostics=idealResult.diagnostics?{...idealResult.diagnostics}:null;
+          state.grid=new Int16Array(state.cols*state.rows).fill(-1);
+          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE);
+          state.makingMode=false;state.makingFocusColor=null;state.makingShowAll=false;state.completedColorCodes.clear();
+          if(state.smartMode)state.smartPhase='done';
+          commitHistory('history.converted');
+          renderAll();
+          toast('toast.inventoryEmpty','info');
+          setStatus('status.inventoryEmpty');
+          updateDetailAdvice();
+          if(!state.hasAutoFit){
+            state.hasAutoFit=true;
+            requestAnimationFrame(()=>fitCanvasToViewport(false));
+          }
+          return;
+        }
         const result = await runConversion(payload, jobId);
         if (jobId !== state.conversionJob) return;
+        if(idealPayload){
+          const idealResult=await runConversion(idealPayload,jobId);
+          if (jobId !== state.conversionJob) return;
+          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE);
+        }
         state.lastConversionDiagnostics=result.diagnostics?{...result.diagnostics}:null;
         const compactGrid=new Int16Array(result.buffer);
         if(boardContained){
@@ -3617,7 +3930,7 @@ import {
       test('不足一成的占比保留一位小数',formatShare(3,380).label==='0.8%'&&formatShare(1,380).label==='0.3%');
 
       const failed=tests.filter(item=>!item.pass);
-      if(failed.length)console.error(`[豆格工坊自检失败] ${JSON.stringify(failed)}`);else console.info(`[豆格工坊自检通过] ${tests.length} 项`);
+      if(failed.length)console.error(`[海星图豆自检失败] ${JSON.stringify(failed)}`);else console.info(`[海星图豆自检通过] ${tests.length} 项`);
       return tests;
     }
 
@@ -3629,7 +3942,7 @@ import {
       els.maxColorsValue.textContent=t('unit.colorsValue',{count:state.maxColors});
       setProjectSubtitle(state.projectSubtitleKey,state.projectSubtitleParams);
       setStatus(state.statusKey,state.statusParams);
-      syncSizeModeUI();syncAspectStatus();renderPalette();updateSelectedColor();updateStats();updateSmartCard();updateDetailAdvice();updateViewButtons();
+      syncSizeModeUI();syncAspectStatus();renderPalette();renderInventorySwitcher();renderInventoryGrid();updateSelectedColor();updateStats();updateSmartCard();updateDetailAdvice();updateViewButtons();
       if(els.shareDialog?.open)renderShareCardPreview();
     }
 
@@ -3757,6 +4070,28 @@ import {
       document.querySelectorAll('[data-palette-series]').forEach(button=>button.addEventListener('click',()=>{state.paletteSeries=button.dataset.paletteSeries;renderPalette();updateViewButtons();}));
       els.paletteSearch.addEventListener('input',renderPalette);
 
+      els.inventoryEnabled.addEventListener('change',()=>{setInventoryEnabled(els.inventoryEnabled.checked);renderInventoryPanel();});
+      els.inventorySelect.addEventListener('change',()=>switchInventory(els.inventorySelect.value));
+      els.inventoryNewBtn.addEventListener('click',addInventory);
+      els.inventoryRenameBtn.addEventListener('click',renameCurrentInventory);
+      els.inventoryDeleteBtn.addEventListener('click',deleteCurrentInventory);
+      document.querySelectorAll('[data-inventory-series]').forEach(button=>button.addEventListener('click',()=>{state.inventorySeries=button.dataset.inventorySeries;renderInventoryGrid();}));
+      els.inventorySearch.addEventListener('input',renderInventoryGrid);
+      els.inventorySelectAllBtn.addEventListener('click',()=>{
+        const pickable=inventoryPickableColors();
+        setInventoryCodes(new Set(pickable.map(color=>color.code)));
+        renderInventoryGrid();renderInventoryPanel();
+        toast('toast.inventoryAllSelected','success',{count:pickable.length});
+      });
+      els.inventoryClearBtn.addEventListener('click',()=>{
+        setInventoryCodes(new Set());
+        renderInventoryGrid();renderInventoryPanel();
+        toast('toast.inventoryCleared','info');
+      });
+      els.inventoryExportBtn.addEventListener('click',exportInventory);
+      els.inventoryImportBtn.addEventListener('click',()=>els.inventoryImportInput.click());
+      els.inventoryImportInput.addEventListener('change',()=>{importInventoryFile(els.inventoryImportInput.files[0]);els.inventoryImportInput.value='';});
+
       els.patternCanvas.addEventListener('pointerdown',event=>{
         if(event.button!==0||blockMutationDuringConversion())return;if(cellSize()<4){toast('toast.previewEditZoom');return;}const cell=pointerCell(event);if(!cell)return;els.patternCanvas.focus();
         state.isDrawing=true;state.strokeChanged=false;state.lastCell=cell;els.patternCanvas.setPointerCapture(event.pointerId);applyToolAt(cell.x,cell.y);
@@ -3813,10 +4148,22 @@ import {
 
     function init() {
       initializeI18n();
+      state.inventories = loadInventories(localStorage, {
+        validCodesByProvider: inventoryValidCodesByProvider(),
+        legacyProviderId: PALETTE_PROVIDER.id,
+        legacyDefaultName: t('inventory.defaultName'),
+      });
+      // 立即回写一次：把 v1 单仓库数据迁移为 v2 多仓库格式。
+      saveInventories(localStorage, state.inventories, inventoryValidCodesByProvider());
+      const activeCodes = activeInventoryCodes(state.inventories);
+      state.inventory = { enabled: activeCodes.size > 0, codes: activeCodes };
+      syncInventoryDiagnostics();
       els.appVersion.textContent=`v${APP_VERSION}`;
       els.projectTitle.textContent=t('project.untitled');
       setProjectSubtitle('project.localOnly');
       renderPalette();
+      renderInventorySwitcher();
+      renderInventoryGrid();
       updateSelectedColor();
       resetHistory();
       bindEvents();
@@ -3827,7 +4174,7 @@ import {
       setTool('brush');
       updateRecoveryUI();
       if(location.protocol==='https:'&&'serviceWorker' in navigator){
-        navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(error=>console.warn('[豆格工坊] 离线缓存注册失败',error));
+        navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(error=>console.warn('[海星图豆] 离线缓存注册失败',error));
       }
       if (new URLSearchParams(location.search).has('selftest')) runSelfTests();
     }

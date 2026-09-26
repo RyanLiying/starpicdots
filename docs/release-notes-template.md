@@ -1,4 +1,4 @@
-# Bead Grid Studio vX.Y.Z
+# StarPicDots vX.Y.Z
 
 Use this structure for every published Release. Replace every placeholder and remove instructions before publishing.
 
@@ -13,7 +13,7 @@ Explain which users benefit from this release and whether an urgent update is ne
 
 ## Download
 
-For the offline app, download `bead-grid-studio-vX.Y.Z.html` from **Assets**. The ZIP is for redistribution with documentation. GitHub's automatically generated Source Code archives are not the offline app.
+For the offline app, download `starpicdots-vX.Y.Z.html` from **Assets**. The ZIP is for redistribution with documentation. GitHub's automatically generated Source Code archives are not the offline app.
 
 ## Known limitations
 

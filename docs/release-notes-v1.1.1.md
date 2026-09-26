@@ -1,5 +1,7 @@
 # Bead Grid Studio v1.1.1
 
+> 历史发布记录：来自上游项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0），仅为署名保留。当前产品为海星图豆 / StarPicDots。
+
 ## What's fixed
 
 - Completed Simplified Chinese and English messages for the per-cell code toggle, document-mode guidance, safe image-decoding failures, and conversion recovery paths.

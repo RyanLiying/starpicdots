@@ -2,15 +2,15 @@
 
 [简体中文](#简体中文) · [English](#english)
 
-感谢你帮助 Bead Grid Studio / 豆格工坊变得更可靠、更容易使用。文档修正、翻译、测试、无障碍改进和小范围界面修复都属于有价值的贡献。
+感谢你帮助 StarPicDots / 海星图豆变得更可靠、更容易使用。文档修正、翻译、测试、无障碍改进和小范围界面修复都属于有价值的贡献。本项目基于开源项目 Bead Grid Studio（https://github.com/zwhy149/bead-grid-studio，Apache-2.0）二次开发。
 
-Thank you for helping make Bead Grid Studio more reliable and easier to use. Documentation fixes, translations, tests, accessibility improvements, and focused interface fixes are all valuable contributions.
+Thank you for helping make StarPicDots more reliable and easier to use. Documentation fixes, translations, tests, accessibility improvements, and focused interface fixes are all valuable contributions. StarPicDots is based on the open-source project Bead Grid Studio (https://github.com/zwhy149/bead-grid-studio), licensed under Apache-2.0.
 
 ## 简体中文
 
 ### Good First Contribution
 
-第一次参与时，先查看带有 [`good first issue`](https://github.com/zwhy149/bead-grid-studio/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 标签且尚未被认领的 Issue。如果目前没有开放任务，可以在 [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions) 中说明你感兴趣的方向，不要先进行大规模重构。
+第一次参与时，先查看带有 [`good first issue`](https://github.com/RyanLiying/starpicdots/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 标签且尚未被认领的 Issue。如果目前没有开放任务，可以在 [Discussions](https://github.com/RyanLiying/starpicdots/discussions) 中说明你感兴趣的方向，不要先进行大规模重构。
 
 适合新贡献者的任务通常包括：
 
@@ -53,8 +53,8 @@ npx playwright install --with-deps chromium firefox webkit
 2. 把你自己的 Fork 克隆到电脑并进入目录：
 
    ```bash
-   git clone https://github.com/YOUR-NAME/bead-grid-studio.git
-   cd bead-grid-studio
+   git clone https://github.com/YOUR-NAME/starpicdots.git
+   cd starpicdots
    npm ci
    npm run dev
    ```
@@ -77,8 +77,8 @@ PR 应说明观察到的问题、期望结果、实现范围和验证方式。�
 
 ### Issue、Discussion 还是 Pull Request
 
-- 使用方法、想法和作品展示：使用 [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions)。
-- 可复现的程序或转换缺陷：选择合适的 [Issue 表单](https://github.com/zwhy149/bead-grid-studio/issues/new/choose)。
+- 使用方法、想法和作品展示：使用 [Discussions](https://github.com/RyanLiying/starpicdots/discussions)。
+- 可复现的程序或转换缺陷：选择合适的 [Issue 表单](https://github.com/RyanLiying/starpicdots/issues/new/choose)。
 - 已经有明确范围的代码或文档修改：提交 Pull Request。
 
 开始前请搜索已有 Issue，并在最新版在线演示或 `main` 构建中复现。删除工程标题、截图中的隐私信息；只上传你有权公开的图片。
@@ -87,7 +87,7 @@ PR 应说明观察到的问题、期望结果、实现范围和验证方式。�
 
 ### Good First Contribution
 
-For a first contribution, choose an unclaimed [`good first issue`](https://github.com/zwhy149/bead-grid-studio/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). If none is open, describe the area you want to help with in [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions) before starting a broad change.
+For a first contribution, choose an unclaimed [`good first issue`](https://github.com/RyanLiying/starpicdots/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). If none is open, describe the area you want to help with in [Discussions](https://github.com/RyanLiying/starpicdots/discussions) before starting a broad change.
 
 Good first contributions usually include:
 
@@ -130,8 +130,8 @@ npx playwright install --with-deps chromium firefox webkit
 2. Clone your Fork and install the exact dependencies:
 
    ```bash
-   git clone https://github.com/YOUR-NAME/bead-grid-studio.git
-   cd bead-grid-studio
+   git clone https://github.com/YOUR-NAME/starpicdots.git
+   cd starpicdots
    npm ci
    npm run dev
    ```
@@ -154,8 +154,8 @@ Explain the observed problem, expected outcome, implementation scope, and verifi
 
 ### Issue, Discussion, or Pull Request?
 
-- Usage questions, ideas, and show-and-tell: use [Discussions](https://github.com/zwhy149/bead-grid-studio/discussions).
-- Reproducible application or conversion defects: choose the relevant [Issue form](https://github.com/zwhy149/bead-grid-studio/issues/new/choose).
+- Usage questions, ideas, and show-and-tell: use [Discussions](https://github.com/RyanLiying/starpicdots/discussions).
+- Reproducible application or conversion defects: choose the relevant [Issue form](https://github.com/RyanLiying/starpicdots/issues/new/choose).
 - A scoped code or documentation improvement: open a Pull Request.
 
 Search existing Issues first and reproduce on the latest live demo or `main` build. Remove private data from project titles and screenshots. Only upload images you have the right to publish.
