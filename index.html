@@ -43,6 +43,11 @@
         <span class="brand-copy"><strong data-i18n="brand.name">海星图豆</strong><span data-i18n="brand.tagline">在线拼豆图纸施工图</span></span>
       </div>
 
+      <div class="segmented view-switcher" role="group" aria-label="切换工作台与素材图库" data-i18n-aria="aria.viewSwitch">
+        <button class="segment-button" type="button" data-view="workbench" aria-pressed="true" data-i18n="view.workbench">工作台</button>
+        <button class="segment-button" type="button" data-view="gallery" aria-pressed="false" data-i18n="view.gallery">素材图库</button>
+      </div>
+
       <div class="project-meta">
         <strong id="projectTitle">未命名图纸</strong>
         <span id="projectSubtitle">图片仅在当前浏览器中处理</span>
@@ -68,7 +73,7 @@
       </div>
     </header>
 
-    <main class="workspace">
+    <main class="workspace" id="workspaceView">
       <aside class="side-panel panel-left" id="controlPanel" aria-label="图纸设置" data-i18n-aria="aria.controls">
         <div class="mobile-sheet-head"><strong data-i18n="panel.tools">工具与设置</strong><button class="icon-button sheet-close" type="button" aria-label="关闭设置" data-i18n-aria="aria.closeControls">×</button></div>
 
@@ -452,6 +457,18 @@
         </section>
       </aside>
     </main>
+
+    <section class="gallery-view" id="galleryView" aria-labelledby="galleryViewTitle" hidden>
+      <div class="gallery-view-head">
+        <div class="gallery-view-copy">
+          <h2 id="galleryViewTitle" data-i18n="gallery.title">素材图库</h2>
+          <p data-i18n="gallery.subtitle">点一张素材图，按原图尺寸直接生成图纸（我的世界·物品 605 张）</p>
+        </div>
+        <div class="palette-tools gallery-tools"><input id="gallerySearch" type="search" placeholder="搜索素材名…" aria-label="搜索素材图库" data-i18n-placeholder="gallery.search" data-i18n-aria="aria.searchGallery"></div>
+      </div>
+      <div class="gallery-grid" id="galleryGrid" role="listbox" data-i18n-aria="aria.galleryGrid"></div>
+      <p class="gallery-empty" id="galleryEmpty" hidden data-i18n="gallery.empty">没有匹配的素材</p>
+    </section>
 
     <footer class="statusbar" aria-live="polite">
       <span class="status-dot" aria-hidden="true"></span>

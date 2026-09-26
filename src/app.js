@@ -57,6 +57,7 @@ import {
       'applySizeBtn','undoBtn','redoBtn','zoomOutBtn','zoomInBtn','zoomValue','topExportBtn','mirrorHBtn','mirrorVBtn','rotateBtn',
       'clearBtn','saveProjectBtn','loadProjectBtn','projectInput','exportPngBtn','printBtn','majorGridStep','referenceCanvas','patternCanvas',
       'topRuler','leftRuler','boardShell','canvasStack','canvasViewport','emptyState','legendStrip','paletteGrid','paletteSearch',
+      'galleryView','workspaceView','gallerySearch','galleryGrid','galleryEmpty',
       'inventoryEnabled','inventoryCountLabel','inventorySearch','inventoryGrid','inventorySelect','inventoryNewBtn','inventoryRenameBtn','inventoryDeleteBtn','inventorySelectAllBtn','inventoryClearBtn','inventoryImportBtn','inventoryExportBtn','inventoryImportInput','inventoryWarning','missingSection','missingList','missingCountLabel',
       'paletteCountLabel','totalBeads','usedColors','emptyCells','statsList','copyStatsBtn','selectedColorSwatch','selectedColorName','selectedColorCode',
       'statusSize','statusColors','statusBeads','statusZoom','statusMessage','gridToggle','rulerToggle','codesToggle','fitCanvasBtn','convertOverlay',
@@ -218,8 +219,11 @@ import {
       // 小图精修后可完整承载常见头像线稿；继续沿用卡通 32 格警告会与
       // 实际转换结果矛盾。16 格仍保留容量提示，并由转换诊断说明具体冲突。
       const targetLong=Math.max(cols,rows);
-      const lowDetail=isDocument?effectiveLong<100:isPhoto?effectiveLong<64:isLineArt?targetLong<=16:effectiveLong<32;
-      const severeDetail=isDocument?effectiveLong<64:isPhoto?effectiveLong<40:isLineArt?targetLong<16:effectiveLong<20;
+      // 源图与图纸逐格等大时是真正的 1 源像素 = 1 豆，没有重采样就没有细节损失，
+      // 为降采样照片设计的“尺寸过小/细节不足”提示在此必然误报，直接关闭。
+      const exactMatch=width===cols&&height===rows;
+      const lowDetail=!exactMatch&&(isDocument?effectiveLong<100:isPhoto?effectiveLong<64:isLineArt?targetLong<=16:effectiveLong<32);
+      const severeDetail=!exactMatch&&(isDocument?effectiveLong<64:isPhoto?effectiveLong<40:isLineArt?targetLong<16:effectiveLong<20);
       const aspectWarning=fit.mismatch>.05;
       return {fit,effectiveLong,effectiveCells,isDocument,isPhoto,isLineArt,lowDetail,severeDetail,aspectWarning,hasWarning:lowDetail||aspectWarning};
     }
@@ -1960,7 +1964,7 @@ import {
       }finally{URL.revokeObjectURL(url);}
     }
 
-    async function loadImageFile(file) {
+    async function loadImageFile(file, { nativeSize = false } = {}) {
       const allowedTypes=new Set(['image/png','image/jpeg','image/jpg','image/webp','image/gif']);
       if (!file || !allowedTypes.has(String(file.type).toLowerCase())) {
         toast('toast.invalidImage', 'error');
@@ -2007,7 +2011,10 @@ import {
           state.crop={...initialAnalysis.autoCrop};state.cropDraft={...state.crop};state.autoTrimApplied=true;state.autoTrimFraction=initialAnalysis.trimFraction;
           state.sourceAnalysis={...analyzeReferenceImage(image,sourceWidth,sourceHeight,state.crop),autoTrimApplied:true};
         }else state.sourceAnalysis=initialAnalysis;
-        applySmartSettings(currentSmartSettings(),{resetGrid:true,resetHistoryNow:true});
+        const smartSettings=currentSmartSettings();
+        // 素材图库的像素图按 1 源像素 = 1 豆落格：用原图尺寸覆盖智能推荐，只此路径生效。
+        if(nativeSize){smartSettings.cols=clamp(sourceWidth,4,160);smartSettings.rows=clamp(sourceHeight,4,160);}
+        applySmartSettings(smartSettings,{resetGrid:true,resetHistoryNow:true});
         state.referenceRaster = renderReferenceRaster();
         els.fileMeta.hidden = false;
         els.fileName.textContent = file.name;
@@ -2042,6 +2049,109 @@ import {
         if(error?.message!=='sample-fetch'&&state.referenceFileName==='rocket-badge.png')return;
         toast('toast.sampleFailed','error');setStatus('status.sampleFailed');
       }
+    }
+
+    async function loadGalleryItem(name) {
+      try {
+        const response = await fetch(`./gallery/minecraft-items/${name}.png`);
+        if (!response.ok) throw new Error('gallery-fetch');
+        const blob = await response.blob();
+        const file = new File([blob], `${name}.png`, { type: blob.type || 'image/png' });
+        await loadImageFile(file, { nativeSize: true });
+        if (state.referenceFileName !== file.name) return;
+        markCustomSettings();
+        switchView('workbench');
+      } catch { toast('toast.galleryFailed', 'error'); }
+    }
+
+    let galleryManifestRequested = false;
+
+    function switchView(view) {
+      const gallery = view === 'gallery';
+      els.workspaceView.hidden = gallery;
+      els.galleryView.hidden = !gallery;
+      document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+      if (gallery) {
+        closeMobilePanels({ restoreFocus: false });
+        if (!galleryManifestRequested) { galleryManifestRequested = true; loadGalleryManifest(); }
+      }
+    }
+
+    // 素材图库：清单只拉取一次；网格按批次渲染，避免 605 个节点拖慢初始化。
+    const GALLERY_BATCH = 120;
+    let galleryItems = [];
+    let galleryRendered = 0;
+    let galleryObserver = null;
+
+    function createGalleryItemButton(name) {
+      const button = document.createElement('button');
+      button.className = 'gallery-item';
+      button.type = 'button';
+      button.dataset.galleryItem = name;
+      const label = name.replace(/_/g, ' ');
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.width = 16;
+      img.height = 16;
+      img.src = `./gallery/minecraft-items/${name}.png`;
+      img.alt = label;
+      const text = document.createElement('span');
+      text.textContent = label;
+      button.append(img, text);
+      return button;
+    }
+
+    function galleryMatches() {
+      const query = els.gallerySearch.value.trim().toLowerCase();
+      return query ? galleryItems.filter(name => name.toLowerCase().includes(query)) : galleryItems;
+    }
+
+    function appendGalleryBatch(matches) {
+      const fragment = document.createDocumentFragment();
+      matches.slice(galleryRendered, galleryRendered + GALLERY_BATCH).forEach(name => fragment.appendChild(createGalleryItemButton(name)));
+      galleryRendered += fragment.childNodes.length;
+      els.galleryGrid.appendChild(fragment);
+      ensureGallerySentinel(matches);
+    }
+
+    function ensureGallerySentinel(matches) {
+      els.galleryGrid.querySelector('.gallery-sentinel')?.remove();
+      galleryObserver?.disconnect();
+      galleryObserver = null;
+      if (galleryRendered >= matches.length) return;
+      if (!('IntersectionObserver' in window)) { appendGalleryBatch(matches); return; }
+      const sentinel = document.createElement('div');
+      sentinel.className = 'gallery-sentinel';
+      sentinel.setAttribute('aria-hidden', 'true');
+      els.galleryGrid.appendChild(sentinel);
+      galleryObserver = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) appendGalleryBatch(matches);
+      }, { rootMargin: '240px' });
+      galleryObserver.observe(sentinel);
+    }
+
+    function renderGallery() {
+      if (!els.galleryGrid) return;
+      galleryObserver?.disconnect();
+      galleryObserver = null;
+      const matches = galleryMatches();
+      els.galleryGrid.innerHTML = '';
+      galleryRendered = 0;
+      els.galleryEmpty.hidden = matches.length > 0;
+      if (matches.length) appendGalleryBatch(matches);
+    }
+
+    async function loadGalleryManifest() {
+      try {
+        const response = await fetch('./gallery/minecraft-items.json');
+        if (!response.ok) throw new Error('gallery-manifest');
+        const manifest = await response.json();
+        galleryItems = Array.isArray(manifest?.items) ? manifest.items.filter(name => typeof name === 'string' && name) : [];
+      } catch { galleryItems = []; }
+      renderGallery();
     }
 
     function convertPixels(payload) {
@@ -4069,6 +4179,13 @@ import {
       document.querySelectorAll('[data-palette-mode]').forEach(button=>button.addEventListener('click',()=>{state.paletteMode='mard221';renderPalette();updateViewButtons();}));
       document.querySelectorAll('[data-palette-series]').forEach(button=>button.addEventListener('click',()=>{state.paletteSeries=button.dataset.paletteSeries;renderPalette();updateViewButtons();}));
       els.paletteSearch.addEventListener('input',renderPalette);
+
+      document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.view)));
+      els.gallerySearch.addEventListener('input',renderGallery);
+      els.galleryGrid.addEventListener('click',event=>{
+        const button=event.target.closest('button[data-gallery-item]');
+        if(button)loadGalleryItem(button.dataset.galleryItem);
+      });
 
       els.inventoryEnabled.addEventListener('change',()=>{setInventoryEnabled(els.inventoryEnabled.checked);renderInventoryPanel();});
       els.inventorySelect.addEventListener('change',()=>switchInventory(els.inventorySelect.value));
