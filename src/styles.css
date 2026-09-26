@@ -1580,9 +1580,14 @@
 
     @media (max-width: 560px) {
       .top-actions #undoBtn,
-      .top-actions #redoBtn { display: none; }
+      .top-actions #redoBtn,
+      .top-actions #productHelpBtn { display: none; }
       .topbar { gap: 6px; padding-inline: 8px; }
       .brand { display: none; }
+      .language-switcher button { min-width: 0; padding-inline: 6px; }
+      .language-switcher > span { display: none; }
+      .view-switcher .segment-button { padding-inline: 7px; }
+      #topExportBtn { padding-inline: 8px; font-size: 11px; }
       .top-actions { min-width: 0; }
       #topExportBtn { min-width: 0; padding-inline: 10px; }
       .stage-toolbar { padding-inline: 7px; }

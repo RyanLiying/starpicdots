@@ -246,7 +246,7 @@ const enUS = {
   'aria.searchGallery': 'Search material gallery',
   'aria.galleryGrid': 'Material gallery list',
   'view.workbench': 'Workbench',
-  'view.gallery': 'Material Gallery',
+  'view.gallery': 'Gallery',
   'aria.viewSwitch': 'Switch between workbench and material gallery views',
   'stats.title': 'Material Counts',
   'stats.sorted': 'Sorted by quantity',
