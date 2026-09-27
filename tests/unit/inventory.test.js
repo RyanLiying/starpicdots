@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   activeInventoryCodes,
+  BACKUP_REMINDER_INTERVAL_MS,
   computeMissingColors,
   createInventory,
   emptyInventoryStore,
@@ -9,20 +10,25 @@ import {
   getActiveInventory,
   getEffectivePalette,
   INVENTORIES_STORAGE_KEY,
+  INVENTORY_FILE_FORMAT_VERSION,
+  INVENTORY_FILE_TYPE,
   INVENTORY_STORAGE_KEY,
   inventoryNames,
   inventoryWarnings,
   loadInventories,
   normalizeInventoryStore,
   parseInventories,
+  parseInventoryFile,
   parseInventoryStore,
   removeInventory,
   renameActiveInventory,
   renameInventory,
   saveInventories,
   serializeInventories,
+  serializeInventoryFile,
   serializeInventoryStore,
   setActiveInventory,
+  shouldShowBackupReminder,
   updateActiveCodes,
 } from '../../src/core/inventory.js';
 import { DEFAULT_PALETTE_PROVIDER_ID } from '../../src/palettes/catalog.js';
@@ -423,4 +429,67 @@ test('parseInventoryStore returns null on invalid JSON or wrong top-level shape'
 test('inventoryNames lists names in item order', () => {
   assert.deepEqual(inventoryNames(makeStore()), ['主仓', '备用', '散装']);
   assert.deepEqual(inventoryNames(emptyInventoryStore()), []);
+});
+
+test('serializeInventoryFile emits a v1 envelope around the normalized store', () => {
+  const json = serializeInventoryFile(makeStore(), { appVersion: '1.0.0' });
+  const envelope = JSON.parse(json);
+  assert.equal(envelope.type, INVENTORY_FILE_TYPE);
+  assert.equal(envelope.formatVersion, INVENTORY_FILE_FORMAT_VERSION);
+  assert.equal(envelope.owner, null);
+  assert.equal(envelope.app.name, 'StarPicDots');
+  assert.equal(envelope.app.version, '1.0.0');
+  assert.ok(Number.isFinite(Date.parse(envelope.exportedAt)));
+  assert.deepEqual(envelope.inventories, JSON.parse(serializeInventoryStore(makeStore())));
+});
+
+test('parseInventoryFile round-trips the envelope and the legacy raw store', () => {
+  const store = makeStore();
+  const valid = { [PROVIDER]: VALID_CODES };
+  assert.deepEqual(parseInventoryFile(serializeInventoryFile(store, { appVersion: '1.0.0' }), valid), store);
+  assert.deepEqual(parseInventoryFile(serializeInventoryStore(store), valid), store);
+});
+
+test('parseInventoryFile returns null on garbage and on wrong envelope shape', () => {
+  assert.equal(parseInventoryFile('{oops'), null);
+  assert.equal(parseInventoryFile('[]'), null);
+  assert.equal(parseInventoryFile('null'), null);
+  assert.equal(parseInventoryFile('{"type":"other","formatVersion":1,"inventories":{"activeId":null,"items":[]}}'), null);
+  assert.equal(parseInventoryFile('{"type":"starpicdots-inventory","formatVersion":1}'), null);
+  assert.equal(parseInventoryFile('{"type":"starpicdots-inventory","formatVersion":1,"inventories":[]}'), null);
+});
+
+test('parseInventoryFile rejects a newer formatVersion instead of guessing', () => {
+  const future = JSON.stringify({
+    type: INVENTORY_FILE_TYPE,
+    formatVersion: INVENTORY_FILE_FORMAT_VERSION + 1,
+    inventories: JSON.parse(serializeInventoryStore(makeStore())),
+  });
+  assert.equal(parseInventoryFile(future), null);
+});
+
+test('parseInventoryFile filters envelope codes against validCodesByProvider', () => {
+  const store = makeStore();
+  store.items[0].codes = ['H2', 'Z9', 'H7'];
+  const json = serializeInventoryFile(store);
+  const parsed = parseInventoryFile(json, { [PROVIDER]: VALID_CODES });
+  assert.deepEqual(parsed.items[0].codes, ['H2', 'H7']);
+});
+
+test('shouldShowBackupReminder only fires for stale, unexported, undismissed changes', () => {
+  const now = Date.now();
+  const iso = (ms) => new Date(ms).toISOString();
+  const stale = iso(now - BACKUP_REMINDER_INTERVAL_MS - 1000);
+  const recent = iso(now - BACKUP_REMINDER_INTERVAL_MS + 1000);
+  assert.equal(shouldShowBackupReminder(null, now), false);
+  assert.equal(shouldShowBackupReminder({}, now), false);
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: recent }, now), false);
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: stale, lastExportAt: null, reminderDismissedAt: null }, now), true);
+  // 改动后的导出已覆盖这次改动。
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: stale, lastExportAt: iso(now - 1000), reminderDismissedAt: null }, now), false);
+  // 导出早于改动：改动仍未备份。
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: iso(now - 8 * 24 * 60 * 60 * 1000), lastExportAt: iso(now - 9 * 24 * 60 * 60 * 1000), reminderDismissedAt: null }, now), true);
+  // 针对最新改动的关闭记录有效；更早的关闭记录无效。
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: stale, lastExportAt: null, reminderDismissedAt: iso(now - 1000) }, now), false);
+  assert.equal(shouldShowBackupReminder({ lastChangeAt: iso(now - 8 * 24 * 60 * 60 * 1000), lastExportAt: null, reminderDismissedAt: iso(now - 9 * 24 * 60 * 60 * 1000) }, now), true);
 });

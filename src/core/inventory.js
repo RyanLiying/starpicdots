@@ -391,3 +391,72 @@ export function activeInventoryCodes(store) {
 export function inventoryNames(store) {
   return normalizeInventoryStore(store).items.map((item) => item.name);
 }
+
+/* ------------------------------------------------------------------ *
+ * 备份文件格式（envelope, format v1）
+ *
+ * 导出的不再是裸 store，而是带元信息的信封：
+ *   { type, formatVersion, exportedAt, app:{name,version}, owner, inventories }
+ * type/formatVersion 是格式判别字段：导入方凭它们区分信封与历史裸 store，
+ * 并靠 formatVersion 决定能否直接读取。owner 为未来的账户 id 预留，当前恒为 null。
+ * 兼容规则见 docs/inventory-file-format.md。
+ * ------------------------------------------------------------------ */
+
+export const INVENTORY_FILE_TYPE = 'starpicdots-inventory';
+export const INVENTORY_FILE_FORMAT_VERSION = 1;
+
+// 序列化为信封 JSON；inventories 直接复用 serializeInventoryStore 的归一化结果。
+export function serializeInventoryFile(store, { appVersion = '' } = {}) {
+  return JSON.stringify({
+    type: INVENTORY_FILE_TYPE,
+    formatVersion: INVENTORY_FILE_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    app: { name: 'StarPicDots', version: appVersion },
+    owner: null,
+    inventories: JSON.parse(serializeInventoryStore(store)),
+  }, null, 2);
+}
+
+// 解析备份文件：同时接受 (a) 信封格式与 (b) 历史裸 store，返回归一化 store 或 null。
+// 带判别字段但 type 不符、formatVersion 不是当前版本（含更高版本）、或缺 inventories 的，一律返回 null。
+export function parseInventoryFile(json, validCodesByProvider) {
+  let parsed;
+  try {
+    parsed = JSON.parse(json);
+  } catch (_) {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  if (parsed.type !== undefined || parsed.formatVersion !== undefined) {
+    if (parsed.type !== INVENTORY_FILE_TYPE) return null;
+    if (Number(parsed.formatVersion) !== INVENTORY_FILE_FORMAT_VERSION) return null;
+    if (!parsed.inventories || typeof parsed.inventories !== 'object' || Array.isArray(parsed.inventories)) return null;
+    return parseInventoryStore(JSON.stringify(parsed.inventories), validCodesByProvider);
+  }
+  return parseInventoryStore(json, validCodesByProvider);
+}
+
+/* ------------------------------------------------------------------ *
+ * 备份提醒（backup reminder）
+ *
+ * 元信息存于 INVENTORY_META_STORAGE_KEY：{ lastChangeAt, lastExportAt, reminderDismissedAt }
+ * （均为 ISO 字符串或 null）。提醒条件：有改动、改动未被之后的导出覆盖、
+ * 改动已超过一周、且没有针对这次改动的关闭记录。本模块只提供判定，存储在调用方。
+ * ------------------------------------------------------------------ */
+
+export const INVENTORY_META_STORAGE_KEY = 'bead-grid-studio:inventory-meta:v1';
+export const BACKUP_REMINDER_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function shouldShowBackupReminder(meta, now = Date.now()) {
+  if (!meta || typeof meta !== 'object') return false;
+  const changeAt = Date.parse(meta.lastChangeAt);
+  if (!Number.isFinite(changeAt)) return false;
+  const nowMs = now instanceof Date ? now.getTime() : Number(now);
+  if (!Number.isFinite(nowMs)) return false;
+  const exportAt = Date.parse(meta.lastExportAt);
+  if (Number.isFinite(exportAt) && changeAt <= exportAt) return false;
+  if (nowMs - changeAt < BACKUP_REMINDER_INTERVAL_MS) return false;
+  const dismissedAt = Date.parse(meta.reminderDismissedAt);
+  if (Number.isFinite(dismissedAt) && dismissedAt >= changeAt) return false;
+  return true;
+}

@@ -13,15 +13,17 @@ import {
   createInventory,
   getActiveInventory,
   getEffectivePalette,
+  INVENTORY_META_STORAGE_KEY,
   inventoryWarnings,
   loadInventories,
   parseInventories,
-  parseInventoryStore,
+  parseInventoryFile,
   removeInventory,
   renameActiveInventory,
   saveInventories,
-  serializeInventoryStore,
+  serializeInventoryFile,
   setActiveInventory,
+  shouldShowBackupReminder,
   updateActiveCodes,
 } from './core/inventory.js';
 import SAMPLE_IMAGE_URL from '../tests/fixtures/rocket-badge.png?inline';
@@ -59,6 +61,7 @@ import {
       'topRuler','leftRuler','boardShell','canvasStack','canvasViewport','emptyState','legendStrip','paletteGrid','paletteSearch',
       'galleryView','workspaceView','gallerySearch','galleryGrid','galleryEmpty',
       'inventoryEnabled','inventoryCountLabel','inventorySearch','inventoryGrid','inventorySelect','inventoryNewBtn','inventoryRenameBtn','inventoryDeleteBtn','inventorySelectAllBtn','inventoryClearBtn','inventoryImportBtn','inventoryExportBtn','inventoryImportInput','inventoryWarning','missingSection','missingList','missingCountLabel',
+      'inventoryBackupHint','inventoryBackupExportBtn','inventoryBackupDismissBtn',
       'paletteCountLabel','totalBeads','usedColors','emptyCells','statsList','copyStatsBtn','selectedColorSwatch','selectedColorName','selectedColorCode',
       'statusSize','statusColors','statusBeads','statusZoom','statusMessage','gridToggle','rulerToggle','codesToggle','fitCanvasBtn','convertOverlay',
       'progressText','cancelConvertBtn','toast','mobileScrim','controlPanel','palettePanel','printSheet','printImage','printPages',
@@ -761,10 +764,33 @@ import {
       syncInventoryDiagnostics();
     }
 
+    // 备份提醒的元信息是应用层关注点（inventory.js 保持纯逻辑，不碰存储）。
+    function readInventoryMeta() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(INVENTORY_META_STORAGE_KEY) || 'null');
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) { return {}; }
+    }
+
+    function writeInventoryMeta(patch) {
+      const next = { ...readInventoryMeta(), ...patch };
+      try { localStorage.setItem(INVENTORY_META_STORAGE_KEY, JSON.stringify(next)); } catch (_) {}
+    }
+
+    function syncBackupReminder() {
+      if (els.inventoryBackupHint) els.inventoryBackupHint.hidden = !shouldShowBackupReminder(readInventoryMeta());
+    }
+
+    function noteInventoryChanged() {
+      writeInventoryMeta({ lastChangeAt: new Date().toISOString() });
+      syncBackupReminder();
+    }
+
     // 多仓库统一提交入口：替换 store、持久化、刷新派生视图与面板，必要时重新转换。
     function commitInventoryStore(next, { reconvert = true } = {}) {
       state.inventories = next;
       saveInventories(localStorage, state.inventories, inventoryValidCodesByProvider());
+      noteInventoryChanged();
       refreshDerivedInventory();
       renderInventorySwitcher();
       renderInventoryGrid();
@@ -776,6 +802,7 @@ import {
       const next = codes instanceof Set ? new Set(codes) : new Set(codes || []);
       state.inventories = updateActiveCodes(state.inventories, next);
       saveInventories(localStorage, state.inventories, inventoryValidCodesByProvider());
+      noteInventoryChanged();
       refreshDerivedInventory();
       if (state.referenceImage) convertImage();
     }
@@ -1053,7 +1080,9 @@ import {
     }
 
     function exportInventory() {
-      downloadBlob(new Blob([serializeInventoryStore(state.inventories)], {type:'application/json'}), `${t('file.inventory')}.json`);
+      downloadBlob(new Blob([serializeInventoryFile(state.inventories, {appVersion: APP_VERSION})], {type:'application/json'}), `${t('file.inventory')}.json`);
+      writeInventoryMeta({ lastExportAt: new Date().toISOString() });
+      syncBackupReminder();
       toast('toast.inventoryExported','success');
     }
 
@@ -1062,7 +1091,7 @@ import {
       try {
         const text = await file.text();
         const validCodes = inventoryValidCodesByProvider();
-        const importedStore = parseInventoryStore(text, validCodes);
+        const importedStore = parseInventoryFile(text, validCodes);
         if (importedStore && importedStore.items.length) {
           // v2 文件：整体替换本机仓库（先确认）。
           if (state.inventories?.items.length
@@ -2053,7 +2082,7 @@ import {
 
     async function loadGalleryItem(name) {
       try {
-        const response = await fetch(`./gallery/minecraft-items/${name}.png`);
+        const response = await fetch(`./gallery/${galleryCategory}/${name}.png`);
         if (!response.ok) throw new Error('gallery-fetch');
         const blob = await response.blob();
         const file = new File([blob], `${name}.png`, { type: blob.type || 'image/png' });
@@ -2064,24 +2093,20 @@ import {
       } catch { toast('toast.galleryFailed', 'error'); }
     }
 
-    let galleryManifestRequested = false;
-
-    function switchView(view) {
-      const gallery = view === 'gallery';
-      els.workspaceView.hidden = gallery;
-      els.galleryView.hidden = !gallery;
-      document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
-      if (gallery) {
-        closeMobilePanels({ restoreFocus: false });
-        if (!galleryManifestRequested) { galleryManifestRequested = true; loadGalleryManifest(); }
-      }
-    }
-
-    // 素材图库：清单只拉取一次；网格按批次渲染，避免 605 个节点拖慢初始化。
+    // 素材图库：每个分类各自缓存清单，首次切到该分类时才拉取；网格按批次渲染，
+    // 避免上千个节点拖慢初始化。
     const GALLERY_BATCH = 120;
-    let galleryItems = [];
+    const galleryCategories = [
+      { id: 'minecraft-items', items: [], requested: false, loaded: false },
+      { id: 'minecraft-blocks', items: [], requested: false, loaded: false },
+    ];
+    let galleryCategory = galleryCategories[0].id;
     let galleryRendered = 0;
     let galleryObserver = null;
+
+    function activeGalleryCategory() {
+      return galleryCategories.find(category => category.id === galleryCategory) || galleryCategories[0];
+    }
 
     function createGalleryItemButton(name) {
       const button = document.createElement('button');
@@ -2096,7 +2121,7 @@ import {
       img.decoding = 'async';
       img.width = 16;
       img.height = 16;
-      img.src = `./gallery/minecraft-items/${name}.png`;
+      img.src = `./gallery/${galleryCategory}/${name}.png`;
       img.alt = label;
       const text = document.createElement('span');
       text.textContent = label;
@@ -2106,7 +2131,8 @@ import {
 
     function galleryMatches() {
       const query = els.gallerySearch.value.trim().toLowerCase();
-      return query ? galleryItems.filter(name => name.toLowerCase().includes(query)) : galleryItems;
+      const items = activeGalleryCategory().items;
+      return query ? items.filter(name => name.toLowerCase().includes(query)) : items;
     }
 
     function appendGalleryBatch(matches) {
@@ -2140,18 +2166,41 @@ import {
       const matches = galleryMatches();
       els.galleryGrid.innerHTML = '';
       galleryRendered = 0;
-      els.galleryEmpty.hidden = matches.length > 0;
+      // 清单加载中不显示空态文案，避免闪烁“没有匹配的素材”。
+      els.galleryEmpty.hidden = matches.length > 0 || !activeGalleryCategory().loaded;
       if (matches.length) appendGalleryBatch(matches);
     }
 
-    async function loadGalleryManifest() {
+    async function loadGalleryManifest(category = activeGalleryCategory()) {
+      if (category.requested) return;
+      category.requested = true;
       try {
-        const response = await fetch('./gallery/minecraft-items.json');
+        const response = await fetch(`./gallery/${category.id}.json`);
         if (!response.ok) throw new Error('gallery-manifest');
         const manifest = await response.json();
-        galleryItems = Array.isArray(manifest?.items) ? manifest.items.filter(name => typeof name === 'string' && name) : [];
-      } catch { galleryItems = []; }
+        category.items = Array.isArray(manifest?.items) ? manifest.items.filter(name => typeof name === 'string' && name) : [];
+      } catch { category.items = []; }
+      category.loaded = true;
+      if (category.id === galleryCategory) renderGallery();
+    }
+
+    function switchGalleryCategory(id) {
+      if (!galleryCategories.some(category => category.id === id) || id === galleryCategory) return;
+      galleryCategory = id;
+      document.querySelectorAll('[data-gallery-category]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.galleryCategory === id)));
+      loadGalleryManifest();
       renderGallery();
+    }
+
+    function switchView(view) {
+      const gallery = view === 'gallery';
+      els.workspaceView.hidden = gallery;
+      els.galleryView.hidden = !gallery;
+      document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+      if (gallery) {
+        closeMobilePanels({ restoreFocus: false });
+        loadGalleryManifest();
+      }
     }
 
     function convertPixels(payload) {
@@ -4181,6 +4230,7 @@ import {
       els.paletteSearch.addEventListener('input',renderPalette);
 
       document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.view)));
+      document.querySelectorAll('[data-gallery-category]').forEach(button=>button.addEventListener('click',()=>switchGalleryCategory(button.dataset.galleryCategory)));
       els.gallerySearch.addEventListener('input',renderGallery);
       els.galleryGrid.addEventListener('click',event=>{
         const button=event.target.closest('button[data-gallery-item]');
@@ -4206,6 +4256,8 @@ import {
         toast('toast.inventoryCleared','info');
       });
       els.inventoryExportBtn.addEventListener('click',exportInventory);
+      els.inventoryBackupExportBtn?.addEventListener('click',exportInventory);
+      els.inventoryBackupDismissBtn?.addEventListener('click',()=>{writeInventoryMeta({reminderDismissedAt:new Date().toISOString()});syncBackupReminder();});
       els.inventoryImportBtn.addEventListener('click',()=>els.inventoryImportInput.click());
       els.inventoryImportInput.addEventListener('change',()=>{importInventoryFile(els.inventoryImportInput.files[0]);els.inventoryImportInput.value='';});
 
@@ -4290,6 +4342,8 @@ import {
       renderAll();
       setTool('brush');
       updateRecoveryUI();
+      syncBackupReminder();
+      if (navigator.storage?.persist) navigator.storage.persist().catch(()=>{});
       if(location.protocol==='https:'&&'serviceWorker' in navigator){
         navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(error=>console.warn('[海星图豆] 离线缓存注册失败',error));
       }

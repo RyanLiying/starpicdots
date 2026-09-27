@@ -14,6 +14,7 @@ const APP_SHELL = [
   './NOTICE.txt',
   './version.json',
   './gallery/minecraft-items.json',
+  './gallery/minecraft-blocks.json',
 ];
 
 async function precacheApplication() {
