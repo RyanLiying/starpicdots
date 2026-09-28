@@ -2,6 +2,20 @@
 
 All notable changes are documented here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.1.0 — 2026-09-28
+
+- Added 素材图库 (material gallery) as a separate top-level view: 605 Minecraft 1.21 item sprites + 1012 block sprites (16×16), with category tabs, search, and lazy rendering.
+- Clicking a gallery sprite converts it at native pixel size (1 source pixel = 1 bead) via a pixel-exact path that skips lossy photo-oriented processing (no color cap, background blanking, or merging).
+- Suppressed photo-oriented small-size advice when source dimensions exactly match the grid (true 1:1 mapping).
+- Inventory export now writes a versioned envelope file (`starpicdots-inventory`, formatVersion 1, reserved `owner` field for a future account system); import accepts both envelope and legacy raw shapes. Format spec: `docs/inventory-file-format.md`.
+- Added a dismissible backup reminder in the inventory panel after 7 days of unexported changes, plus a silent `navigator.storage.persist()` request at startup.
+- Repaired 277 zero-byte block textures and sliced 49 animated vertical-strip textures to their first frame in the gallery.
+- Fixed the completion toast claiming background blanking based on the setting rather than the actual result.
+
+### Modifications (Apache-2.0 §4b)
+
+- Added the gallery view, gallery category manifests, pixel-exact conversion branch, inventory file envelope (`serializeInventoryFile`/`parseInventoryFile`), backup reminder, and persistent-storage request listed above.
+
 ## 1.0.0 — 2026-09-26
 
 - Rebranded the app to 海星图豆 / StarPicDots (PWA short name `StarPD`).

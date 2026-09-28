@@ -43,8 +43,8 @@ import {
     const BASE_CELL = 16;
     const MAX_HISTORY = 50;
     const PROJECT_VERSION = 2;
-    const APP_VERSION = '1.0.0';
-    const BUILD_DATE = '2026-09-26';
+    const APP_VERSION = '1.1.0';
+    const BUILD_DATE = '2026-09-28';
     const DRAFT_KEY = 'bead-grid-studio:draft:v2';
     const WORKER_TIMEOUT_MS = 12000;
     const PALETTE_PROVIDER = getPaletteProvider(DEFAULT_PALETTE_PROVIDER_ID);
@@ -128,6 +128,7 @@ import {
       inventoryWarnings: null,
       inventoryWarning: null,
       hasAutoFit: false,
+      pixelExact: false,
       sizeMode: 'pattern',
       aspectLock: true,
       lastSizeAxis: 'cols',
@@ -2041,6 +2042,7 @@ import {
           state.sourceAnalysis={...analyzeReferenceImage(image,sourceWidth,sourceHeight,state.crop),autoTrimApplied:true};
         }else state.sourceAnalysis=initialAnalysis;
         const smartSettings=currentSmartSettings();
+        state.pixelExact=nativeSize===true;
         // 素材图库的像素图按 1 源像素 = 1 豆落格：用原图尺寸覆盖智能推荐，只此路径生效。
         if(nativeSize){smartSettings.cols=clamp(sourceWidth,4,160);smartSettings.rows=clamp(sourceHeight,4,160);}
         applySmartSettings(smartSettings,{resetGrid:true,resetHistoryNow:true});
@@ -2537,6 +2539,24 @@ import {
         if(fineMatching)nearestCache.set(key,choice);else coarseCache[key]=choice;
         return choice;
       };
+
+      // 像素直读：源图与图纸 1:1（素材图库按原生尺寸落格）时逐像素独立匹配豆色，
+      // 跳过背景留空、全局限色、合并平滑、描边保护等全部有损处理，严格保持原图每格归属。
+      if(payload.pixelExact&&cols===width&&rows===height){
+        const exactCounts=new Map();
+        let exactNonEmpty=0;
+        for(let i=0;i<pixelCount;i++){
+          const p=i*4,a=data[p+3]/255;
+          if(a<.12)continue;
+          const r=Math.round(data[p]*a+255*(1-a)),g=Math.round(data[p+1]*a+255*(1-a)),b=Math.round(data[p+2]*a+255*(1-a));
+          const position=nearestPalettePosition(r,g,b);
+          grid[i]=palette[position].index;
+          exactCounts.set(grid[i],(exactCounts.get(grid[i])||0)+1);
+          exactNonEmpty++;
+        }
+        const exactSelected=Array.from(exactCounts.keys()).sort((a,b)=>(exactCounts.get(b)||0)-(exactCounts.get(a)||0)||a-b);
+        return {buffer:grid.buffer,selected:exactSelected,nonEmpty:exactNonEmpty,diagnostics:{usedBeforeMerge:exactCounts.size,backgroundPixels:0,edgeArtifactPixels:0,mode:'pixel-exact'}};
+      }
 
       const scores=new Float32Array(palette.length);
       const featureScores=new Float32Array(palette.length);
@@ -3041,7 +3061,8 @@ import {
           whiteMode:els.whiteMode.value,
           processMode:els.processMode.value,
           mergeStrength:state.mergeStrength,
-          protectDark:state.protectDark
+          protectDark:state.protectDark,
+          pixelExact:state.pixelExact===true
         };
         const inventoryActive=inventoryCodes!==null;
         if(!inventoryActive)state.missingColors=null;
@@ -3083,7 +3104,7 @@ import {
         if(state.smartMode)state.smartPhase='done';
         commitHistory('history.converted');
         renderAll();
-        const blankNote = els.whiteMode.value === 'auto' ? t('conversion.backgroundRemoved') : '';
+        const blankNote = els.whiteMode.value === 'auto' && (result.diagnostics?.backgroundPixels ?? 0) > 0 ? t('conversion.backgroundRemoved') : '';
         const mergeNote = result.diagnostics?.usedBeforeMerge > result.selected.length ? t('conversion.colorsMerged',{before:result.diagnostics.usedBeforeMerge,after:result.selected.length}) : '';
         const source=effectiveSourceSize(),span=Math.max(source.width/state.cols,source.height/state.rows);
         const glyphCells=state.sourceAnalysis?.medianGlyphHeightPx?state.sourceAnalysis.medianGlyphHeightPx/span:null;
@@ -3572,7 +3593,7 @@ import {
         els.maxColors.value=state.maxColors;els.maxColorsValue.textContent=t('unit.colorsValue',{count:state.maxColors});els.mergeStrength.value=state.mergeStrength;els.mergeStrengthValue.textContent=state.mergeStrength;els.protectDark.checked=state.protectDark;els.aspectLock.checked=state.aspectLock;els.boardProfile.value=state.boardProfile;els.majorGridStep.value=state.majorGridStep;els.gridCols.value=cols;els.gridRows.value=rows;
         els.projectTitle.textContent=String(project.title||file.name.replace(/\.bead\.json$|\.json$/i,'')).slice(0,80)||t('project.importedName');
         setProjectSubtitle('project.loadedSubtitle');
-        state.referenceImage?.close?.();state.referenceImage=null;state.referenceRaster=null;state.referenceTransforms=[];state.referenceFileName='';state.referenceSourceWidth=0;state.referenceSourceHeight=0;state.sourceAnalysis=null;state.lastConversionDiagnostics=null;state.crop={x:0,y:0,w:1,h:1};state.cropPreview=null;state.cropPreviewBase=null;state.smartMode=false;state.smartPhase='custom';els.fileMeta.hidden=true;els.smartCard.hidden=true;els.detailAdvice.hidden=true;els.stageQualityBanner.hidden=true;els.convertBtn.disabled=true;
+        state.referenceImage?.close?.();state.referenceImage=null;state.referenceRaster=null;state.referenceTransforms=[];state.referenceFileName='';state.referenceSourceWidth=0;state.referenceSourceHeight=0;state.sourceAnalysis=null;state.lastConversionDiagnostics=null;state.pixelExact=false;state.crop={x:0,y:0,w:1,h:1};state.cropPreview=null;state.cropPreviewBase=null;state.smartMode=false;state.smartPhase='custom';els.fileMeta.hidden=true;els.smartCard.hidden=true;els.detailAdvice.hidden=true;els.stageQualityBanner.hidden=true;els.convertBtn.disabled=true;
         resetHistory();renderPalette();updateSelectedColor();syncSizeModeUI();syncAspectStatus();renderAll();state.dirty=Boolean(fromDraft);
         if(fromDraft)toast('toast.projectRestored','success');else toast(legacy?'toast.projectMigrated':'toast.projectLoaded','success');
         setStatus(fromDraft?'status.projectRestored':'status.projectLoaded',fromDraft?{cols,rows}:{cols,rows,migration:legacy?t('status.projectMigration'):''});updateRecoveryUI();
@@ -3694,6 +3715,13 @@ import {
       const transparent=new Uint8ClampedArray(4*4*4);
       const transparentResult=convertPixels({data:transparent,width:4,height:4,cols:1,rows:1,palette:[{index:0,lab:rgbToOklab([255,255,255])}],maxColors:2,whiteMode:'auto'});
       test('透明图保持空格',new Int16Array(transparentResult.buffer)[0]===-1);
+
+      const pixelExactData=new Uint8ClampedArray([255,255,255,255, 220,40,50,255, 0,0,0,0, 218,42,52,255]);
+      const pixelExactPalette=[{index:0,rgb:[255,255,255],lab:rgbToOklab([255,255,255])},{index:1,rgb:[220,40,50],lab:rgbToOklab([220,40,50])}];
+      const pixelExactResult=convertPixels({data:pixelExactData,width:2,height:2,cols:2,rows:2,palette:pixelExactPalette,maxColors:1,whiteMode:'auto',pixelExact:true});
+      const pixelExactGrid=new Int16Array(pixelExactResult.buffer);
+      test('像素直读：白像素不被留空且逐格精确映射',pixelExactGrid[0]===0&&pixelExactGrid[1]===1&&pixelExactGrid[2]===-1&&pixelExactGrid[3]===1&&pixelExactResult.diagnostics.mode==='pixel-exact');
+      test('像素直读：非 1:1 时回退常规管线',(()=>{const fallback=convertPixels({data:solidRed,width:4,height:4,cols:1,rows:1,palette:[{index:0,lab:rgbToOklab([220,40,50])}],maxColors:1,whiteMode:'keep',pixelExact:true});return fallback.diagnostics.mode!=='pixel-exact'&&new Int16Array(fallback.buffer)[0]===0;})());
 
       // JPEG 压缩或环境反光会让黑色带少量蓝灰偏色；开启保护时仍应落在中性色阶。
       const tintedBlack=new Uint8ClampedArray(4*4*4);

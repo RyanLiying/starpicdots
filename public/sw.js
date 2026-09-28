@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'starpicdots-';
-const CACHE_NAME = `${CACHE_PREFIX}v1.0.0`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.1.0`;
 const APP_SHELL = [
   './manifest.webmanifest',
   './app-icon.svg',
