@@ -18,6 +18,33 @@ export const MARD_SERIES = Object.freeze({
   M: '大地系',
 });
 
+// Special-effect series (Q/Y/ZG) are screen-HEX approximations and must never enter automatic matching; T1 is transparent like H1.
+export const MARD_EXTENDED_SERIES = Object.freeze({
+  P: '珠光系',
+  Q: '温变系',
+  R: '果冻系',
+  T: '透明系',
+  Y: '夜光系',
+  ZG: '光变系',
+});
+
+// ZG is the only two-letter series prefix.
+const MARD_CODE_PATTERN = /^(ZG|[A-Z])(\d+)$/;
+
+function buildColor(token, index, seriesNames) {
+  const [code, hex] = token.split(':');
+  const series = MARD_CODE_PATTERN.exec(code)?.[1] || code[0];
+  const isTransparent = code === 'H1' || code === 'T1';
+  const name = isTransparent
+    ? '透明'
+    : code === 'H2'
+      ? '白色'
+      : code === 'H7'
+        ? '黑色'
+        : seriesNames[series];
+  return { code, name, hex, displayHex: code === 'H2' ? '#FFFFFF' : hex, index, series, isTransparent };
+}
+
 const MARD_221_DATA = `
   A1:#FAF4C8 A2:#FFFFD5 A3:#FEFF8B A4:#FBED56 A5:#F4D738 A6:#FEAC4C A7:#FE8B4C A8:#FFDA45 A9:#FF995B A10:#F77C31 A11:#FFDD99 A12:#FE9F72 A13:#FFC365 A14:#FD543D A15:#FFF365 A16:#FFFF9F A17:#FFE36E A18:#FEBE7D A19:#FD7C72 A20:#FFD568 A21:#FFE395 A22:#F4F57D A23:#E6C9B7 A24:#F7F8A2 A25:#FFD67D A26:#FFC830
   B1:#E6EE31 B2:#63F347 B3:#9EF780 B4:#5DE035 B5:#35E352 B6:#65E2A6 B7:#3DAF80 B8:#1C9C4F B9:#27523A B10:#95D3C2 B11:#5D722A B12:#166F41 B13:#CAEB7B B14:#ADE946 B15:#2E5132 B16:#C5ED9C B17:#9BB13A B18:#E6EE49 B19:#24B88C B20:#C2F0CC B21:#156A6B B22:#0B3C43 B23:#303A21 B24:#EEFCA5 B25:#4E846D B26:#8D7A35 B27:#CCE1AF B28:#9EE5B9 B29:#C5E254 B30:#E2FCB1 B31:#B0E792 B32:#9CAB5A
@@ -30,19 +57,21 @@ const MARD_221_DATA = `
   M1:#BCC6B8 M2:#8AA386 M3:#697D80 M4:#E3D2BC M5:#D0CCAA M6:#B0A782 M7:#B4A497 M8:#B38281 M9:#A58767 M10:#C5B2BC M11:#9F7594 M12:#644749 M13:#D19066 M14:#C77362 M15:#757D78
 `;
 
-export const PALETTE = MARD_221_DATA.trim().split(/\s+/).map((token, index) => {
-  const [code, hex] = token.split(':');
-  const series = code[0];
-  const isTransparent = code === 'H1';
-  const name = isTransparent
-    ? '透明'
-    : code === 'H2'
-      ? '白色'
-      : code === 'H7'
-        ? '黑色'
-        : MARD_SERIES[series];
-  return { code, name, hex, displayHex: code === 'H2' ? '#FFFFFF' : hex, index, series, isTransparent };
-});
+export const PALETTE = MARD_221_DATA.trim().split(/\s+/).map((token, index) => buildColor(token, index, MARD_SERIES));
+
+const MARD_EXTENDED_DATA = `
+  P1:#FCF7F8 P2:#B0A9AC P3:#AFDCAB P4:#FEA49F P5:#EE8C3E P6:#5FD0A7 P7:#EB9270 P8:#F0D958 P9:#D9D9D9 P10:#D9C7EA P11:#F3ECC9 P12:#E6EEF2 P13:#AACBEF P14:#337680 P15:#668575 P16:#FEBF45 P17:#FEA324 P18:#FEB89F P19:#FFFEEC P20:#FEBECF P21:#ECBEBF P22:#E4A89F P23:#A56268
+  Q1:#F2A5E8 Q2:#E9EC91 Q3:#FFFF00 Q4:#FFEBFA Q5:#76CEDE
+  R1:#D50D21 R2:#F92F83 R3:#FD8324 R4:#F8EC31 R5:#35C75B R6:#238891 R7:#19779D R8:#1A60C3 R9:#9A56B4 R10:#FFDB4C R11:#FFEBFA R12:#D8D5CE R13:#55514C R14:#9FE4DF R15:#77CEE9 R16:#3ECFCA R17:#4A867A R18:#7FCD9D R19:#CDE55D R20:#E8C7B4 R21:#AD6F3C R22:#6C372F R23:#FEB872 R24:#F3C1C0 R25:#C9675E R26:#D293BE R27:#EA8CB1 R28:#9C87D6
+  T1:#FFFFFF
+  Y1:#FD6FB4 Y2:#FEB481 Y3:#D7FAA0 Y4:#8BDBFA Y5:#E987EA
+  ZG1:#DAABB3 ZG2:#D6AA87 ZG3:#C1BD8D ZG4:#96869F ZG5:#8490A6 ZG6:#94BFE2 ZG7:#E2A9D2 ZG8:#AB91C0
+`;
+
+export const EXTENDED_PALETTE = MARD_EXTENDED_DATA.trim().split(/\s+/).map((token, index) =>
+  buildColor(token, PALETTE.length + index, { ...MARD_SERIES, ...MARD_EXTENDED_SERIES }));
+
+export const FULL_PALETTE = [...PALETTE, ...EXTENDED_PALETTE];
 
 // Compatibility mapping for projects saved by the pre-open-source Bead Grid Studio editor.
 // It is not presented as a manufacturer palette or used for new MARD 221 quantization.

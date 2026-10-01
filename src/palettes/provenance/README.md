@@ -10,5 +10,8 @@
 - Columns: `ref,name,r,g,b,hex,contributor`
 
 The shipped base catalog is derived by filtering the `A/B/C/D/E/F/G/H/M`
-series, not by slicing the first 221 rows. Run `npm run check` to verify every
-local base code and HEX value against this immutable snapshot.
+series, not by slicing the first 221 rows. The optional full catalog ships all
+291 rows, adding the `P/Q/R/T/Y/ZG` extended series verbatim (special-effect
+series are screen HEX approximations and stay outside automatic matching).
+Run `npm run check` to verify every local code and HEX value — base and full —
+against this immutable snapshot.
