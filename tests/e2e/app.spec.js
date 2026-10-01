@@ -19,8 +19,29 @@ test('built-in conversion regression suite passes', async ({ page }) => {
   const messages = [];
   page.on('console', (message) => messages.push(message.text()));
   await page.goto('/?lang=zh-CN&selftest=1');
-  await expect.poll(() => messages.find((message) => message.includes('海星图豆自检通过'))).toMatch(/84 项/);
+  await expect.poll(() => messages.find((message) => message.includes('海星图豆自检通过'))).toMatch(/87 项/);
   expect(messages.filter((message) => message.includes('自检失败'))).toEqual([]);
+});
+
+test('switches between the 221 and 291 palette providers and persists across reload', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'palette switching runs once in Chromium');
+  await page.goto('/?lang=zh-CN');
+  await expect(page.locator('#paletteCountLabel')).toHaveText(/221 色/);
+  await expect(page.locator('[data-palette-series="P"]')).toHaveCount(0);
+
+  await page.locator('[data-palette-mode="mard291"]').click();
+  await expect(page.locator('#paletteCountLabel')).toHaveText(/291 色/);
+  await expect(page.locator('[data-palette-series="P"]')).toBeVisible();
+  await expect(page.locator('[data-palette-series="ZG"]')).toBeVisible();
+  await expect(page.locator('[data-palette-mode="mard291"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.palette-color').first()).toBeVisible();
+  await expect(page.locator('.palette-color', { hasText: 'ZG8' })).toHaveCount(1);
+
+  await page.locator('[data-palette-mode="mard221"]').click();
+  await expect(page.locator('#paletteCountLabel')).toHaveText(/221 色/);
+  await expect(page.locator('[data-palette-series="P"]')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('#paletteCountLabel')).toHaveText(/221 色/);
 });
 
 test('mobile layout stays inside the viewport and exposes tool sheets', async ({ page }, testInfo) => {
@@ -45,7 +66,7 @@ test('portable single-file release runs without a server', async ({ page }) => {
   file.search = 'lang=zh-CN&selftest=1';
   await page.goto(file.href);
   await expect(page).toHaveTitle(/海星图豆/);
-  await expect.poll(() => messages.find((message) => message.includes('海星图豆自检通过'))).toMatch(/84 项/);
+  await expect.poll(() => messages.find((message) => message.includes('海星图豆自检通过'))).toMatch(/87 项/);
   expect(errors).toEqual([]);
 });
 

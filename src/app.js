@@ -5,8 +5,15 @@ import {
   gridFromAspectAnchor,
   orientedSourceDimensions,
 } from './core/geometry.js';
-import { LEGACY_64_HEX } from './palettes/mard221.js';
-import { DEFAULT_PALETTE_PROVIDER_ID, getPaletteProvider } from './palettes/catalog.js';
+import { FULL_PALETTE as MARD_FULL_PALETTE, LEGACY_64_HEX, PALETTE as MARD_BASE_PALETTE } from './palettes/mard221.js';
+import {
+  DEFAULT_PALETTE_PROVIDER_ID,
+  getPaletteProvider,
+  PALETTE_MODE_PROVIDER_IDS,
+  PALETTE_PROVIDERS,
+  paletteModeForProviderId,
+  providerIdForPaletteMode,
+} from './palettes/catalog.js';
 import {
   activeInventoryCodes,
   computeMissingColors,
@@ -47,7 +54,22 @@ import {
     const BUILD_DATE = '2026-09-28';
     const DRAFT_KEY = 'bead-grid-studio:draft:v2';
     const WORKER_TIMEOUT_MS = 12000;
-    const PALETTE_PROVIDER = getPaletteProvider(DEFAULT_PALETTE_PROVIDER_ID);
+    const PALETTE_MODE_STORAGE_KEY = 'bead-grid-studio:palette-mode:v1';
+    const PROJECT_STASH_KEY = 'bead-grid-studio:pending-project:v1';
+    // 色板范围必须在模块求值时就确定（色板对象是模块级常量），切换后整页重载。
+    // 草稿在空画布时会被清除，因此色板范围需要独立键持久化，草稿只作旧会话回退。
+    function readPersistedPaletteMode() {
+      try {
+        const stored = localStorage.getItem(PALETTE_MODE_STORAGE_KEY);
+        if (stored) return stored;
+        const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        return typeof draft?.settings?.paletteMode === 'string' ? draft.settings.paletteMode : 'mard221';
+      } catch (_) { return 'mard221'; }
+    }
+    function persistPaletteMode(mode) {
+      try { localStorage.setItem(PALETTE_MODE_STORAGE_KEY, mode); } catch (_) {}
+    }
+    const PALETTE_PROVIDER = getPaletteProvider(providerIdForPaletteMode(readPersistedPaletteMode()));
     const PALETTE = PALETTE_PROVIDER.colors;
     const MARD_PALETTE_SOURCE = PALETTE_PROVIDER.source;
 
@@ -83,7 +105,7 @@ import {
       showRulers: true,
       showCodes: true,
       zoom: 1,
-      paletteMode: 'mard221',
+      paletteMode: paletteModeForProviderId(PALETTE_PROVIDER.id),
       paletteSeries: 'all',
       inventorySeries: 'all',
       maxColors: 32,
@@ -171,7 +193,7 @@ import {
     function modeLabel(mode) { return t(`mode.${mode}`); }
     function boardProfileLabel(profile) { return t(profile?.labelKey || 'board.mini52'); }
     function localizedColorName(color) {
-      if(color?.code==='H1')return t('palette.transparent');
+      if(color?.isTransparent)return t('palette.transparent');
       if(color?.code==='H2')return t('palette.white');
       if(color?.code==='H7')return t('palette.black');
       return t(`palette.series.${color?.series || 'H'}`);
@@ -410,7 +432,7 @@ import {
         cols:grid.cols,rows:grid.rows,capacity:grid.cols*grid.rows,
         processMode:documentMode?'document':photoMode?'detail':'cartoon',
         fitMode:'contain',whiteMode:'auto',maxColors:documentMode?24:photoMode?48:lineArtMode?16:32,mergeStrength:2,protectDark:true,
-        paletteMode:'mard221',previewMode:'square',showGrid:true,showCodes:true,
+        paletteMode:state.paletteMode,previewMode:'square',showGrid:true,showCodes:true,
         structuralOnly:Boolean(documentMode&&grid.structuralOnly)
       };
     }
@@ -719,20 +741,21 @@ import {
       return Math.sqrt(Math.max(0,dl*dl+dc*dc+dh*dh+rt*dc*dh));
     }
 
-    PALETTE.forEach(color => {
+    MARD_FULL_PALETTE.forEach(color => {
       color.rgb = hexToRgb(color.hex);
       color.lab = rgbToOklab(color.rgb);
       color.cieLab = rgbToCielab(color.rgb);
     });
+    // 旧工程迁移始终映射到基础 221 色（两种色板共享前 221 项，索引一致）。
     const LEGACY_TO_MARD=new Map([...LEGACY_64_HEX].map(([code,hex])=>{
-      const target=rgbToCielab(hexToRgb(hex));let best=PALETTE.findIndex(color=>color.code==='H2'),distance=Infinity;
-      PALETTE.forEach(color=>{if(color.isTransparent)return;const value=deltaE2000(target,color.cieLab);if(value<distance){distance=value;best=color.index;}});
+      const target=rgbToCielab(hexToRgb(hex));let best=MARD_BASE_PALETTE.findIndex(color=>color.code==='H2'),distance=Infinity;
+      MARD_BASE_PALETTE.forEach(color=>{if(color.isTransparent)return;const value=deltaE2000(target,color.cieLab);if(value<distance){distance=value;best=color.index;}});
       return [code,best];
     }));
 
     function getAllowedPalette() {
-      // H1 是透明豆，不应从普通不透明图片自动生成；用户仍可在色板中手动画入。
-      return PALETTE.filter(color=>!color.isTransparent);
+      // 透明豆与特效色（Q/Y/ZG）不应从普通图片自动生成；用户仍可在色板中手动画入。
+      return PALETTE.filter(color=>PALETTE_PROVIDER.autoMatchable(color));
     }
 
     function inventoryCodesOrNull() {
@@ -741,7 +764,7 @@ import {
 
     function syncInventoryDiagnostics() {
       const codes = inventoryCodesOrNull();
-      state.inventoryWarnings = codes ? inventoryWarnings(PALETTE, codes) : null;
+      state.inventoryWarnings = codes ? inventoryWarnings(PALETTE, codes, PALETTE_PROVIDER) : null;
       state.inventoryWarning = state.inventoryWarnings?.empty ? 'empty' : null;
     }
 
@@ -755,7 +778,7 @@ import {
     }
 
     function inventoryValidCodesByProvider() {
-      return { [PALETTE_PROVIDER.id]: PALETTE.map(color => color.code) };
+      return Object.fromEntries(Object.values(PALETTE_PROVIDERS).map(provider => [provider.id, provider.colors.map(color => color.code)]));
     }
 
     // state.inventory 是激活仓库的派生视图：store 或激活仓库变化后必须调用此函数刷新。
@@ -914,7 +937,7 @@ import {
 
     function renderPalette() {
       const rawQuery=els.paletteSearch.value.trim().toLowerCase();
-      const query=rawQuery.replace(/^([a-hm])0+(\d+)$/,'$1$2');
+      const query=rawQuery.replace(/^(zg|[a-hmp-rt-y])0+(\d+)$/,'$1$2');
       const allowed=PALETTE;
       els.paletteGrid.innerHTML = '';
       const visible=allowed.filter(color => (state.paletteSeries==='all'||color.series===state.paletteSeries)&&(!query || color.code.toLowerCase().includes(query) || localizedColorName(color).toLowerCase().includes(query) || color.name.includes(query) || color.hex.toLowerCase().includes(query)));
@@ -945,7 +968,7 @@ import {
           });
           els.paletteGrid.appendChild(button);
         });
-      els.paletteCountLabel.textContent=state.paletteSeries==='all'?t('palette.countAll'):t('palette.countSeries',{series:state.paletteSeries,count:visible.length});
+      els.paletteCountLabel.textContent=state.paletteSeries==='all'?t('palette.countAll',{count:PALETTE.length,series:PALETTE_PROVIDER.series.length}):t('palette.countSeries',{series:state.paletteSeries,count:visible.length});
     }
 
     const PALETTE_BY_CODE = new Map(PALETTE.map(color => [color.code, color]));
@@ -974,7 +997,7 @@ import {
     function renderInventoryGrid() {
       if (!els.inventoryGrid) return;
       const rawQuery = els.inventorySearch.value.trim().toLowerCase();
-      const query = rawQuery.replace(/^([a-hm])0+(\d+)$/,'$1$2');
+      const query = rawQuery.replace(/^(zg|[a-hmp-rt-y])0+(\d+)$/,'$1$2');
       const owned = state.inventory.codes instanceof Set ? state.inventory.codes : new Set();
       els.inventoryGrid.innerHTML = '';
       const visible = inventoryPickableColors().filter(color =>
@@ -3048,7 +3071,7 @@ import {
         const paletteEntry=color=>({index:color.index,code:color.code,rgb:color.rgb,lab:color.lab,cieLab:color.cieLab});
         const fullPalette=getAllowedPalette();
         const inventoryCodes=inventoryCodesOrNull();
-        const palette=getEffectivePalette(fullPalette,inventoryCodes).map(paletteEntry);
+        const palette=getEffectivePalette(fullPalette,inventoryCodes,PALETTE_PROVIDER).map(paletteEntry);
         syncInventoryDiagnostics();
         const payload = {
           data:imageData.data,
@@ -3074,7 +3097,7 @@ import {
           if (jobId !== state.conversionJob) return;
           state.lastConversionDiagnostics=idealResult.diagnostics?{...idealResult.diagnostics}:null;
           state.grid=new Int16Array(state.cols*state.rows).fill(-1);
-          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE);
+          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE,PALETTE_PROVIDER);
           state.makingMode=false;state.makingFocusColor=null;state.makingShowAll=false;state.completedColorCodes.clear();
           if(state.smartMode)state.smartPhase='done';
           commitHistory('history.converted');
@@ -3093,7 +3116,7 @@ import {
         if(idealPayload){
           const idealResult=await runConversion(idealPayload,jobId);
           if (jobId !== state.conversionJob) return;
-          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE);
+          state.missingColors=computeMissingColors(countPaletteIndexCounts(idealResult.buffer),state.inventory.codes,PALETTE,PALETTE_PROVIDER);
         }
         state.lastConversionDiagnostics=result.diagnostics?{...result.diagnostics}:null;
         const compactGrid=new Int16Array(result.buffer);
@@ -3492,7 +3515,7 @@ import {
         type:'bead-grid-studio',version:PROJECT_VERSION,appVersion:APP_VERSION,savedAt:new Date().toISOString(),title:String(title||t('project.untitled')).slice(0,80),
         grid:{cols:state.cols,rows:state.rows,cells:Array.from(state.grid,value=>value>=0&&PALETTE[value]?PALETTE[value].code:null)},
         settings:{selectedColor:state.selectedColor,selectedColorCode:PALETTE[state.selectedColor]?.code||'H7',previewMode:state.previewMode,showGrid:state.showGrid,showRulers:state.showRulers,showCodes:state.showCodes,zoom:state.zoom,paletteMode:state.paletteMode,maxColors:state.maxColors,mergeStrength:state.mergeStrength,protectDark:state.protectDark,sizeMode:state.sizeMode,aspectLock:state.aspectLock,boardProfile:state.boardProfile,boardTilesX:state.boardTilesX,boardTilesY:state.boardTilesY,majorGridStep:state.majorGridStep,processMode:els.processMode.value,fitMode:els.fitMode.value,whiteMode:els.whiteMode.value},
-        palette:'mard-compatible-base-221-v1',paletteProvider:PALETTE_PROVIDER.id,paletteSource:MARD_PALETTE_SOURCE,
+        palette:`${PALETTE_PROVIDER.id}-v1`,paletteProvider:PALETTE_PROVIDER.id,paletteSource:MARD_PALETTE_SOURCE,
         making:{completedColorCodes:[...state.completedColorCodes].filter(code=>PALETTE.some(color=>color.code===code)),focusColorCode:PALETTE[state.makingFocusColor]?.code||null},
         reference:{embedded:false}
       };
@@ -3571,6 +3594,14 @@ import {
         if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<4||cols>160||rows<4||rows>160) throw new Error('dimensions');
         if(!Array.isArray(project.grid?.cells)||project.grid.cells.length!==cols*rows) throw new Error('cells');
         const legacy=project.version===1&&project.palette==='universal-screen-64-v1';
+        // 工程绑定的色板与当前不同时：暂存文件、切换色板范围并重载，加载在新色板下重放。
+        const projectProviderId=!legacy&&typeof project.paletteProvider==='string'&&PALETTE_PROVIDERS[project.paletteProvider]?project.paletteProvider:DEFAULT_PALETTE_PROVIDER_ID;
+        if(!legacy&&projectProviderId!==PALETTE_PROVIDER.id){
+          try{sessionStorage.setItem(PROJECT_STASH_KEY,text);}catch(_){}
+          persistPaletteMode(paletteModeForProviderId(projectProviderId));
+          location.reload();
+          return;
+        }
         const colorByCode=new Map(PALETTE.map(color=>[color.code,color.index]));
         const cells=project.grid.cells.map((value,index)=>{
           if(value===null)return -1;
@@ -3584,7 +3615,7 @@ import {
         state.selectedColor=legacy?(PALETTE.find(color=>color.code==='H7')?.index??0):(colorByCode.get(settings.selectedColorCode)??Math.round(clamp(settings.selectedColor??0,0,PALETTE.length-1)));
         state.previewMode=['square','bead'].includes(settings.previewMode)?settings.previewMode:'square';
         state.showGrid=settings.showGrid!==false;state.showRulers=settings.showRulers!==false;state.showCodes=Boolean(settings.showCodes);
-        state.zoom=clamp(settings.zoom??1,.0625,2);state.paletteMode='mard221';state.paletteSeries='all';state.maxColors=Math.round(clamp(settings.maxColors??32,2,64));state.mergeStrength=Math.round(clamp(settings.mergeStrength??10,0,30));state.protectDark=settings.protectDark!==false;state.sizeMode=settings.sizeMode==='board'?'board':'pattern';state.aspectLock=settings.aspectLock!==false;state.boardProfile=BOARD_PROFILES[settings.boardProfile]?settings.boardProfile:'mini52';state.boardTilesX=Math.max(1,Math.round(settings.boardTilesX||1));state.boardTilesY=Math.max(1,Math.round(settings.boardTilesY||1));state.majorGridStep=[5,10,29].includes(Number(settings.majorGridStep))?Number(settings.majorGridStep):10;
+        state.zoom=clamp(settings.zoom??1,.0625,2);state.paletteMode=paletteModeForProviderId(PALETTE_PROVIDER.id);state.paletteSeries='all';state.maxColors=Math.round(clamp(settings.maxColors??32,2,64));state.mergeStrength=Math.round(clamp(settings.mergeStrength??10,0,30));state.protectDark=settings.protectDark!==false;state.sizeMode=settings.sizeMode==='board'?'board':'pattern';state.aspectLock=settings.aspectLock!==false;state.boardProfile=BOARD_PROFILES[settings.boardProfile]?settings.boardProfile:'mini52';state.boardTilesX=Math.max(1,Math.round(settings.boardTilesX||1));state.boardTilesY=Math.max(1,Math.round(settings.boardTilesY||1));state.majorGridStep=[5,10,29].includes(Number(settings.majorGridStep))?Number(settings.majorGridStep):10;
         const making=project.making||{},completedCodes=Array.isArray(making.completedColorCodes)?making.completedColorCodes:[];
         state.completedColorCodes=new Set(completedCodes.filter(code=>typeof code==='string'&&colorByCode.has(code)));
         state.makingFocusColor=typeof making.focusColorCode==='string'?(colorByCode.get(making.focusColorCode)??null):null;state.makingMode=false;state.makingShowAll=false;
@@ -4101,10 +4132,15 @@ import {
       const bounds=occupiedBounds(boundsFixture,6,5);
       test('施工图自动裁去外围空白并计算最小行列',bounds.minX===2&&bounds.minY===1&&bounds.cols===3&&bounds.rows===3);
       test('一键方案默认开启网格与逐格色号',cartoonSmart.showGrid&&cartoonSmart.showCodes);
-      const mardCounts={};PALETTE.forEach(color=>mardCounts[color.series]=(mardCounts[color.series]||0)+1);
-      test('MARD 基础色板严格为 A/B/C/D/E/F/G/H/M 共221色',PALETTE.length===221&&JSON.stringify(mardCounts)===JSON.stringify({A:26,B:32,C:29,D:26,E:24,F:25,G:21,H:23,M:15})&&PALETTE.every(color=>/^[A-HM]\d{1,2}$/.test(color.code)));
-      test('透明H1不参与自动匹配，白H2与黑H7锚点正确',getAllowedPalette().length===220&&!getAllowedPalette().some(color=>color.code==='H1')&&PALETTE.find(color=>color.code==='H1')?.isTransparent&&PALETTE.find(color=>color.code==='H2')?.hex==='#FEFFFF'&&PALETTE.find(color=>color.code==='H7')?.hex==='#000000');
-      test('221色色号文字自动选择高对比色',PALETTE.every(color=>contrastRatio(color.displayHex,colorText(color.displayHex))>=4.5));
+      const mardCounts={};MARD_BASE_PALETTE.forEach(color=>mardCounts[color.series]=(mardCounts[color.series]||0)+1);
+      test('MARD 基础色板严格为 A/B/C/D/E/F/G/H/M 共221色',MARD_BASE_PALETTE.length===221&&JSON.stringify(mardCounts)===JSON.stringify({A:26,B:32,C:29,D:26,E:24,F:25,G:21,H:23,M:15})&&MARD_BASE_PALETTE.every(color=>/^[A-HM]\d{1,2}$/.test(color.code)));
+      test('透明H1不参与自动匹配，白H2与黑H7锚点正确',MARD_BASE_PALETTE.filter(PALETTE_PROVIDERS[DEFAULT_PALETTE_PROVIDER_ID].autoMatchable).length===220&&MARD_BASE_PALETTE.find(color=>color.code==='H1')?.isTransparent&&MARD_BASE_PALETTE.find(color=>color.code==='H2')?.hex==='#FEFFFF'&&MARD_BASE_PALETTE.find(color=>color.code==='H7')?.hex==='#000000');
+      test('221色色号文字自动选择高对比色',MARD_BASE_PALETTE.every(color=>contrastRatio(color.displayHex,colorText(color.displayHex))>=4.5));
+      const fullCounts={};MARD_FULL_PALETTE.forEach(color=>fullCounts[color.series]=(fullCounts[color.series]||0)+1);
+      test('MARD 全色色板扩展 P/Q/R/T/Y/ZG 共291色',MARD_FULL_PALETTE.length===291&&JSON.stringify(fullCounts)===JSON.stringify({A:26,B:32,C:29,D:26,E:24,F:25,G:21,H:23,M:15,P:23,Q:5,R:28,T:1,Y:5,ZG:8})&&MARD_FULL_PALETTE.every(color=>/^(ZG|[A-HM-PQRTY])\d{1,2}$/.test(color.code)));
+      const fullProvider=PALETTE_PROVIDERS['mard-compatible-full-291'];
+      test('291色板自动匹配仅含基础实色与珠光果冻共271色',fullProvider.colors.filter(fullProvider.autoMatchable).length===271&&!fullProvider.autoMatchable(fullProvider.colors.find(color=>color.code==='Q1'))&&!fullProvider.autoMatchable(fullProvider.colors.find(color=>color.code==='Y1'))&&!fullProvider.autoMatchable(fullProvider.colors.find(color=>color.code==='ZG1')));
+      test('ZG双字母系列解析正确且T1为透明色',MARD_FULL_PALETTE.find(color=>color.code==='ZG8')?.series==='ZG'&&MARD_FULL_PALETTE.find(color=>color.code==='T1')?.isTransparent===true);
       test('CIEDE2000实现通过标准参考对',Math.abs(deltaE2000([50,2.6772,-79.7751],[50,0,-82.7485])-2.0425)<.0002);
       test('粗辅助线覆盖起点、间隔、物理接板线与尾边',JSON.stringify(majorGridStops(41,10))===JSON.stringify([0,10,20,30,40,41])&&JSON.stringify(majorGridStops(58,29))===JSON.stringify([0,29,58])&&JSON.stringify(majorGridStops(104,52))===JSON.stringify([0,52,104]));
       test('大画布缩放受8MP单层预算保护',maxSafeZoom(160,160)===1&&maxSafeZoom(120,120)===1.25&&maxSafeZoom(60,60)===2);
@@ -4253,7 +4289,14 @@ import {
       els.rulerToggle.addEventListener('click',()=>{state.showRulers=!state.showRulers;renderAll();});
       els.codesToggle.addEventListener('click',()=>{state.showCodes=!state.showCodes;if(state.showCodes&&cellSize()<14)toast('toast.codesNeedZoom');renderAll();});
       els.majorGridStep.addEventListener('change',()=>{state.majorGridStep=[5,10,29].includes(Number(els.majorGridStep.value))?Number(els.majorGridStep.value):10;renderAll();setStatus('status.majorGrid',{count:state.majorGridStep});});
-      document.querySelectorAll('[data-palette-mode]').forEach(button=>button.addEventListener('click',()=>{state.paletteMode='mard221';renderPalette();updateViewButtons();}));
+      document.querySelectorAll('[data-palette-mode]').forEach(button=>button.addEventListener('click',()=>{
+        const mode=button.dataset.paletteMode;
+        if(!PALETTE_MODE_PROVIDER_IDS[mode]||mode===state.paletteMode)return;
+        state.paletteMode=mode;
+        persistPaletteMode(mode);
+        saveDraftNow();
+        location.reload();
+      }));
       document.querySelectorAll('[data-palette-series]').forEach(button=>button.addEventListener('click',()=>{state.paletteSeries=button.dataset.paletteSeries;renderPalette();updateViewButtons();}));
       els.paletteSearch.addEventListener('input',renderPalette);
 
@@ -4343,6 +4386,21 @@ import {
       window.matchMedia('(min-width: 960px)').addEventListener('change',event=>{if(event.matches)closeMobilePanels({restoreFocus:false});else syncMobilePanelInert();});
     }
 
+    function buildSeriesFilterButtons() {
+      // 系列筛选按钮随色板范围生成：291 色板多出 P/Q/R/T/Y/ZG，不能在 HTML 里写死。
+      document.querySelectorAll('.palette-series').forEach(group => {
+        const attribute = group.querySelector('[data-inventory-series]') ? 'data-inventory-series' : 'data-palette-series';
+        group.querySelectorAll(`[${attribute}]:not([${attribute}="all"])`).forEach(button => button.remove());
+        PALETTE_PROVIDER.series.forEach(series => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.setAttribute(attribute, series);
+          button.textContent = series;
+          group.appendChild(button);
+        });
+      });
+    }
+
     function init() {
       initializeI18n();
       state.inventories = loadInventories(localStorage, {
@@ -4358,6 +4416,7 @@ import {
       els.appVersion.textContent=`v${APP_VERSION}`;
       els.projectTitle.textContent=t('project.untitled');
       setProjectSubtitle('project.localOnly');
+      buildSeriesFilterButtons();
       renderPalette();
       renderInventorySwitcher();
       renderInventoryGrid();
@@ -4376,6 +4435,15 @@ import {
         navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(error=>console.warn('[海星图豆] 离线缓存注册失败',error));
       }
       if (new URLSearchParams(location.search).has('selftest')) runSelfTests();
+      resumeStashedProject();
+    }
+
+    // 重载前暂存的工程文件：色板已切换到位，直接跳过确认重放加载。
+    function resumeStashedProject() {
+      let raw=null;
+      try{raw=sessionStorage.getItem(PROJECT_STASH_KEY);if(raw)sessionStorage.removeItem(PROJECT_STASH_KEY);}catch(_){}
+      if(!raw)return;
+      loadProjectFile(new File([raw],t('project.recoveryFile'),{type:'application/json'}),{skipConfirm:true});
     }
 
     init();
