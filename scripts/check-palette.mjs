@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { PALETTE } from '../src/palettes/mard221.js';
+import { FULL_PALETTE, PALETTE } from '../src/palettes/mard221.js';
 
 const SOURCE_PATH = 'src/palettes/provenance/mard-291.csv';
 const EXPECTED_SHA256 = '898BBEAC2C2BCF41E5293554E46545F42628FBD2CB2BC3E3C9313C889DBBE700';
-const BASE_SERIES = new Set(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M']);
+const SERIES_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M', 'P', 'Q', 'R', 'T', 'Y', 'ZG'];
+const BASE_SERIES = new Set(SERIES_ORDER.slice(0, 9));
+const codeSeries = (code) => (code.startsWith('ZG') ? 'ZG' : code[0]);
 
 const source = await readFile(SOURCE_PATH);
 const sha256 = createHash('sha256').update(source).digest('hex').toUpperCase();
@@ -21,15 +23,14 @@ const rows = source.toString('utf8').trim().split(/\r?\n/).map((line, index) => 
 if (rows.length !== 291) throw new Error(`Expected 291 source rows, found ${rows.length}`);
 
 const naturalCodeOrder = (left, right) => {
-  const seriesOrder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M'];
-  const leftSeries = left.code[0];
-  const rightSeries = right.code[0];
-  return seriesOrder.indexOf(leftSeries) - seriesOrder.indexOf(rightSeries)
-    || Number(left.code.slice(1)) - Number(right.code.slice(1));
+  const leftSeries = codeSeries(left.code);
+  const rightSeries = codeSeries(right.code);
+  return SERIES_ORDER.indexOf(leftSeries) - SERIES_ORDER.indexOf(rightSeries)
+    || Number(left.code.replace(/^(?:ZG|[A-Z])/, '')) - Number(right.code.replace(/^(?:ZG|[A-Z])/, ''));
 };
 
 const upstreamBase = rows
-  .filter((row) => BASE_SERIES.has(row.code[0]))
+  .filter((row) => BASE_SERIES.has(codeSeries(row.code)))
   .sort(naturalCodeOrder);
 const localBase = [...PALETTE].sort(naturalCodeOrder);
 
@@ -45,4 +46,19 @@ for (let index = 0; index < upstreamBase.length; index += 1) {
   }
 }
 
-console.log(`Palette provenance passed: ${rows.length} pinned rows, ${localBase.length} verified base colors, SHA-256 ${sha256}.`);
+const upstreamFull = [...rows].sort(naturalCodeOrder);
+const localFull = [...FULL_PALETTE].sort(naturalCodeOrder);
+
+if (upstreamFull.length !== 291 || localFull.length !== 291) {
+  throw new Error(`Expected 291 full colors, found upstream=${upstreamFull.length}, local=${localFull.length}`);
+}
+
+for (let index = 0; index < upstreamFull.length; index += 1) {
+  const upstream = upstreamFull[index];
+  const local = localFull[index];
+  if (local.code !== upstream.code || local.hex.toUpperCase() !== upstream.hex) {
+    throw new Error(`Full palette mismatch at ${index}: local ${local.code} ${local.hex}, upstream ${upstream.code} ${upstream.hex}`);
+  }
+}
+
+console.log(`Palette provenance passed: ${rows.length} pinned rows, ${localBase.length} verified base colors, ${localFull.length} verified full colors, SHA-256 ${sha256}.`);

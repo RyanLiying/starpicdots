@@ -2,8 +2,8 @@ import { access, readFile, readdir } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
 import enUS from '../src/i18n/en-US.js';
 import zhCN from '../src/i18n/zh-CN.js';
-import { DEFAULT_PALETTE_PROVIDER_ID, getPaletteProvider } from '../src/palettes/catalog.js';
-import { PALETTE } from '../src/palettes/mard221.js';
+import { DEFAULT_PALETTE_PROVIDER_ID, getPaletteProvider, PALETTE_PROVIDERS } from '../src/palettes/catalog.js';
+import { FULL_PALETTE, PALETTE } from '../src/palettes/mard221.js';
 
 const [html, app, geometry, manifest, worker, ciWorkflow, pagesWorkflow, license, publicLicense, notice, publicNotice, packageJson, versionJson, healthJson, readmeZh, readmeEn, readmeRedirect, licenseAdr, deployZh, deployEn, privacyEn, termsEn, robots, sitemap] = await Promise.all([
   readFile('index.html', 'utf8'),
@@ -86,6 +86,13 @@ check(PALETTE.every((color) => /^[A-HM]\d{1,2}$/.test(color.code)), 'non-base se
 const provider = getPaletteProvider();
 check(provider.id === DEFAULT_PALETTE_PROVIDER_ID && provider.colors === PALETTE, 'default palette provider is not wired to the pinned 221 colors');
 check(provider.colors.filter(provider.autoMatchable).length === 220, 'transparent H1 must stay outside automatic image matching');
+const fullCodes = FULL_PALETTE.map((color) => color.code);
+check(fullCodes.length === 291 && new Set(fullCodes).size === 291, `expected 291 unique full palette entries, found ${fullCodes.length}`);
+check(FULL_PALETTE.every((color) => /^(ZG|[A-HM-PQRTY])\d{1,2}$/.test(color.code)), 'unexpected series leaked into the full 291 catalog');
+check(FULL_PALETTE.slice(0, 221).every((color, index) => color === PALETTE[index]), 'full palette must share the pinned base 221 entries unchanged');
+const fullProvider = PALETTE_PROVIDERS['mard-compatible-full-291'];
+check(Boolean(fullProvider) && fullProvider.colors === FULL_PALETTE, 'full 291 palette provider is not registered');
+check(fullProvider.colors.filter(fullProvider.autoMatchable).length === 271, 'special-effect Q/Y/ZG and transparent codes must stay outside automatic image matching');
 
 const parsedManifest = JSON.parse(manifest);
 check(parsedManifest.start_url === './', 'manifest start_url must remain repository-subpath safe');
