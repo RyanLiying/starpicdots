@@ -33,9 +33,17 @@ function toCodeSet(codeSet) {
   return codeSet instanceof Set ? codeSet : new Set(normalizeCodes(codeSet));
 }
 
-function validCodesFor(providerId) {
+export function validCodesFor(providerId) {
   const provider = PALETTE_PROVIDERS[providerId];
   return provider ? new Set(provider.colors.map((color) => color.code)) : null;
+}
+
+// 参与自动转换的判定：优先用 provider.autoMatchable（全色板会排除特效色 Q/Y/ZG 与透明色），
+// 未提供 provider 时退化为仅排除透明豆（与 getAllowedPalette 的旧规则一致）。
+function matchRule(provider) {
+  return typeof provider?.autoMatchable === 'function'
+    ? provider.autoMatchable
+    : (color) => !color.isTransparent;
 }
 
 // 相对亮度（Rec.709 luma），用于近似判断“近白 / 近黑”锚点色。
@@ -52,21 +60,22 @@ function hexLuma(hex) {
 const NEAR_WHITE_LUMA = 0.93;
 const NEAR_BLACK_LUMA = 0.06;
 
-export function filterPaletteByInventory(palette, codeSet) {
-  // 与 getAllowedPalette 同一规则：透明豆（如 H1）不参与自动转换，即使用户标记了它。
+export function filterPaletteByInventory(palette, codeSet, provider) {
+  // 与 getAllowedPalette 同一规则：不参与自动匹配的颜色（透明豆、特效色）即使用户标记了也不用。
   const owned = toCodeSet(codeSet);
-  return palette.filter((color) => !color.isTransparent && owned.has(color.code));
+  const matchable = matchRule(provider);
+  return palette.filter((color) => matchable(color) && owned.has(color.code));
 }
 
-export function getEffectivePalette(palette, codeSet) {
-  // codeSet 为 null/undefined 表示库存功能未启用：返回完整非透明色板（同 getAllowedPalette）。
-  if (codeSet == null) return palette.filter((color) => !color.isTransparent);
-  return filterPaletteByInventory(palette, codeSet);
+export function getEffectivePalette(palette, codeSet, provider) {
+  // codeSet 为 null/undefined 表示库存功能未启用：返回完整可自动匹配色板（同 getAllowedPalette）。
+  if (codeSet == null) return palette.filter(matchRule(provider));
+  return filterPaletteByInventory(palette, codeSet, provider);
 }
 
-export function inventoryWarnings(palette, codeSet) {
+export function inventoryWarnings(palette, codeSet, provider) {
   // 锚点守卫：过滤掉所有近白（H2 类）或近黑（H7 类）颜色是允许的，但把事实结构化地交给 UI 提示。
-  const effective = getEffectivePalette(palette, codeSet);
+  const effective = getEffectivePalette(palette, codeSet, provider);
   const knownCodes = new Set(palette.map((color) => color.code));
   const missingCodes = codeSet == null
     ? []
@@ -82,16 +91,17 @@ export function inventoryWarnings(palette, codeSet) {
 // 缺色清单：理想（完整色板）转换用到、但库存未拥有的颜色，按用量降序排列。
 // idealCounts 为可迭代的 [index, count] 对（如 Map），index 是色板数组位置而非库存子集位置。
 // codeSet 为 null/undefined 表示库存功能未启用：没有“缺失”概念，返回空清单。
-export function computeMissingColors(idealCounts, codeSet, palette) {
+export function computeMissingColors(idealCounts, codeSet, palette, provider) {
   if (codeSet == null) return [];
   if (!idealCounts || typeof idealCounts[Symbol.iterator] !== 'function') return [];
   const owned = toCodeSet(codeSet);
+  const matchable = matchRule(provider);
   const rows = [];
   for (const entry of idealCounts) {
     const [index, count] = entry || [];
     if (!Number.isInteger(count) || count <= 0) continue;
     const color = palette?.[index];
-    if (!color || color.isTransparent) continue;
+    if (!color || !matchable(color)) continue;
     if (owned.has(color.code)) continue;
     rows.push({ code: color.code, name: color.name, hex: color.hex, count, series: color.series });
   }

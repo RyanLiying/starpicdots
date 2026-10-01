@@ -31,8 +31,9 @@ import {
   shouldShowBackupReminder,
   updateActiveCodes,
 } from '../../src/core/inventory.js';
-import { DEFAULT_PALETTE_PROVIDER_ID } from '../../src/palettes/catalog.js';
-import { PALETTE } from '../../src/palettes/mard221.js';
+import { DEFAULT_PALETTE_PROVIDER_ID, getPaletteProvider } from '../../src/palettes/catalog.js';
+import { FULL_PALETTE, PALETTE } from '../../src/palettes/mard221.js';
+import { validCodesFor } from '../../src/core/inventory.js';
 
 const PROVIDER = DEFAULT_PALETTE_PROVIDER_ID;
 const VALID_CODES = new Set(PALETTE.map((color) => color.code));
@@ -55,6 +56,33 @@ test('filterPaletteByInventory excludes transparent colors even when owned', () 
   const filtered = filterPaletteByInventory(PALETTE, new Set(['H1', 'A1', 'H7']));
   assert.deepEqual(filtered.map((color) => color.code), ['A1', 'H7']);
   assert.ok(filtered.every((color) => !color.isTransparent));
+});
+
+test('validCodesFor exposes the full 291 provider codes', () => {
+  const codes = validCodesFor('mard-compatible-full-291');
+  assert.ok(codes.has('P1') && codes.has('R28') && codes.has('ZG8') && codes.has('T1'));
+  assert.equal(codes.size, 291);
+  assert.equal(validCodesFor('not-a-real-provider'), null);
+});
+
+test('291 provider keeps P/R but drops Q/Y/ZG/T1 even when owned', () => {
+  const provider = getPaletteProvider('mard-compatible-full-291');
+  const owned = new Set(['A1', 'P1', 'R1', 'Q1', 'Y1', 'ZG1', 'T1', 'H1']);
+  assert.deepEqual(
+    filterPaletteByInventory(FULL_PALETTE, owned, provider).map((color) => color.code),
+    ['A1', 'P1', 'R1'],
+  );
+  const effective = getEffectivePalette(FULL_PALETTE, owned, provider);
+  assert.deepEqual(effective.map((color) => color.code), ['A1', 'P1', 'R1']);
+  assert.equal(getEffectivePalette(FULL_PALETTE, null, provider).length, 271);
+});
+
+test('computeMissingColors never lists non-auto-matchable extended colors', () => {
+  const provider = getPaletteProvider('mard-compatible-full-291');
+  const indexOf = (code) => FULL_PALETTE.findIndex((color) => color.code === code);
+  const counts = new Map([[indexOf('Q1'), 4], [indexOf('ZG1'), 3], [indexOf('T1'), 2], [indexOf('P2'), 5]]);
+  const rows = computeMissingColors(counts, new Set(), FULL_PALETTE, provider);
+  assert.deepEqual(rows.map((row) => row.code), ['P2']);
 });
 
 test('filtering preserves original index values and never re-indexes', () => {
