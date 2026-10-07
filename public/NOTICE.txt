@@ -70,3 +70,13 @@ polyfill into generated JavaScript:
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+
+The minecraft-blocks-3d gallery (422 full-cube blocks) consists solely of
+locally generated 48×48 pixel-exact oblique-projection renders (no
+anti-aliasing) built from the bundled flat 16×16 block textures; see
+scripts/build-blocks3d-cubes.mjs.
+
+Minecraft textures © Mojang Studios. Not an official Minecraft product;
+not approved by or associated with Mojang or Microsoft. Use of these
+images is subject to the Minecraft Usage Guidelines
+(https://www.minecraft.net/usage-guidelines).
