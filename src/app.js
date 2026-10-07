@@ -2106,6 +2106,8 @@ import {
     }
 
     async function loadGalleryItem(name) {
+      // 3D 方块分类只含整方块：gallery PNG 是由平面贴图渲染的 48×48 斜投影
+      // 方块（每 texel 恰好对应整数个像素），与其他分类一样按原尺寸加载。
       try {
         const response = await fetch(`./gallery/${galleryCategory}/${name}.png`);
         if (!response.ok) throw new Error('gallery-fetch');
@@ -2124,6 +2126,7 @@ import {
     const galleryCategories = [
       { id: 'minecraft-items', items: [], requested: false, loaded: false },
       { id: 'minecraft-blocks', items: [], requested: false, loaded: false },
+      { id: 'minecraft-blocks-3d', items: [], requested: false, loaded: false },
     ];
     let galleryCategory = galleryCategories[0].id;
     let galleryRendered = 0;
